@@ -23,8 +23,18 @@ const userSchema = new mongoose.Schema(
     avatar: {
       type: String,
       default: ""
-    }
+    },
+    createdRooms: [{
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "Room"
+}],
+
+joinedRooms: [{
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "Room"
+}],
   },
+  
   {
     timestamps: true
   }

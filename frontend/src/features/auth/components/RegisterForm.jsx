@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { registerSchema } from "../validation/authSchema";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,7 +16,13 @@ export default function RegisterForm() {
 
   const [loading, setLoading] = useState(false);
 
-  const { register, handleSubmit } = useForm();
+  const {
+  register,
+  handleSubmit,
+  formState: { errors },
+} = useForm({
+  resolver: zodResolver(registerSchema),
+});
 
   const onSubmit = async (data) => {
     try {
@@ -22,11 +30,12 @@ export default function RegisterForm() {
 
       await registerUser(data);
 
-      alert("Registration Successful!");
+     toast.success("Account Created Successfully");
 
       navigate("/");
     } catch (error) {
-      alert(error.response?.data?.message || "Registration Failed");
+      toast.error(error.response?.data?.message);
+
     } finally {
       setLoading(false);
     }
@@ -52,6 +61,11 @@ export default function RegisterForm() {
               placeholder="Enter your name"
               {...register("name")}
             />
+            {errors.name && (
+  <p className="text-red-500 text-sm mt-1">
+    {errors.name.message}
+  </p>
+)}
           </div>
 
           <div>
@@ -62,6 +76,12 @@ export default function RegisterForm() {
               placeholder="Enter your email"
               {...register("email")}
             />
+{errors.email && (
+  <p className="text-red-500 text-sm mt-1">
+    {errors.email.message}
+  </p>
+)}
+
           </div>
 
           <div>
@@ -72,6 +92,11 @@ export default function RegisterForm() {
               placeholder="Enter your password"
               {...register("password")}
             />
+            {errors.password && (
+  <p className="text-red-500 text-sm mt-1">
+    {errors.password.message}
+  </p>
+)}
           </div>
 
           <Button

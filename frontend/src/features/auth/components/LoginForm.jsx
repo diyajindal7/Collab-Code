@@ -1,6 +1,10 @@
+import { toast } from "sonner";
+import { Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { loginSchema } from "../validation/authSchema";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,11 +20,14 @@ export default function LoginForm() {
   const { setUser, setToken } = useAuth();
 
   const [loading, setLoading] = useState(false);
-
-  const {
-    register,
-    handleSubmit
-  } = useForm();
+const [showPassword, setShowPassword] = useState(false);
+const {
+  register,
+  handleSubmit,
+  formState: { errors },
+} = useForm({
+  resolver: zodResolver(loginSchema),
+});
 
   const onSubmit = async (data) => {
     try {
@@ -38,7 +45,8 @@ export default function LoginForm() {
   console.log("RESPONSE:", error.response);
   console.log("DATA:", error.response?.data);
 
-  alert(error.response?.data?.message || "Login Failed");
+  toast.error(error.response?.data?.message);
+
 }finally {
       setLoading(false);
     }
@@ -60,22 +68,42 @@ export default function LoginForm() {
           <div>
             <Label>Email</Label>
 
-            <Input
-              type="email"
-              placeholder="Enter your email"
-              {...register("email")}
-            />
+           <Input
+  type="email"
+  placeholder="Enter your email"
+  {...register("email")}
+/>
+
+{errors.email && (
+  <p className="text-red-500 text-sm mt-1">
+    {errors.email.message}
+  </p>
+)}
           </div>
 
-          <div>
-            <Label>Password</Label>
+          <div className="relative">
+    <Label>Password</Label>
 
-            <Input
-              type="password"
-              placeholder="Enter your password"
-              {...register("password")}
-            />
-          </div>
+    <Input
+  type={showPassword ? "text" : "password"}
+  placeholder="Enter password"
+  {...register("password")}
+/>
+
+{errors.password && (
+  <p className="text-red-500 text-sm mt-1">
+    {errors.password.message}
+  </p>
+)}
+
+    <button
+        type="button"
+        onClick={() => setShowPassword(!showPassword)}
+        className="absolute right-3 top-9"
+    >
+        {showPassword ? <EyeOff size={18}/> : <Eye size={18}/>}
+    </button>
+</div>
 
           <Button
             type="submit"

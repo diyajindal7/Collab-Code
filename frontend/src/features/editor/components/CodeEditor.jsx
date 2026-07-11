@@ -2,19 +2,17 @@ import { useEffect, useRef, useState } from "react";
 import Editor from "@monaco-editor/react";
 import { useParams } from "react-router-dom";
 import socket from "../socket";
+import { useParticipants } from "@/features/rooms/context/ParticipantsContext";
+import { useEditor } from "../context/EditorContext";
 
-export default function CodeEditor() {
+export default function CodeEditor({ language }) {
   const { roomCode } = useParams();
 
   const editorRef = useRef(null);
   const isRemoteUpdate = useRef(false);
+const { setParticipants } = useParticipants();
 
-  const [code, setCode] = useState(`// Welcome to CollabCode 🚀
-
-function hello() {
-    console.log("Hello World");
-}
-`);
+const { code, setCode } = useEditor();
 
   // Store Monaco editor instance
   const handleEditorDidMount = (editor) => {
@@ -22,44 +20,51 @@ function hello() {
   };
 
   // Join room when component loads
-  useEffect(() => {
-    socket.emit("join-room", roomCode);
+ useEffect(() => {
+  const user = JSON.parse(localStorage.getItem("user"));
 
-    // Load saved code
-    socket.on("load-code", (savedCode) => {
-      if (savedCode) {
-        setCode(savedCode);
+  socket.emit("join-room", {
+    roomCode,
+    user,
+  });
 
-        if (editorRef.current) {
-          editorRef.current.setValue(savedCode);
-        }
+  const handleLoadCode = (savedCode) => {
+    if (savedCode) {
+      setCode(savedCode);
+
+      if (editorRef.current) {
+        editorRef.current.setValue(savedCode);
       }
-    });
+    }
+  };
 
-    // Receive code updates
-    socket.on("receive-code", (newCode) => {
-      if (!editorRef.current) return;
+  const handleReceiveCode = (newCode) => {
+    if (!editorRef.current) return;
 
-      if (newCode !== editorRef.current.getValue()) {
-        isRemoteUpdate.current = true;
+    if (newCode !== editorRef.current.getValue()) {
+      isRemoteUpdate.current = true;
 
-        editorRef.current.setValue(newCode);
-        setCode(newCode);
+      editorRef.current.setValue(newCode);
+      setCode(newCode);
 
-        isRemoteUpdate.current = false;
-      }
-    });
+      isRemoteUpdate.current = false;
+    }
+  };
 
-    socket.on("user-joined", (data) => {
-      console.log(data.message);
-    });
+  const handleParticipants = (users) => {
+    setParticipants(users);
+  };
 
-    return () => {
-      socket.off("load-code");
-      socket.off("receive-code");
-      socket.off("user-joined");
-    };
-  }, [roomCode]);
+  socket.on("load-code", handleLoadCode);
+  socket.on("receive-code", handleReceiveCode);
+  socket.on("participants-update", handleParticipants);
+
+  return () => {
+    socket.off("load-code", handleLoadCode);
+    socket.off("receive-code", handleReceiveCode);
+    socket.off("participants-update", handleParticipants);
+  };
+}, [roomCode, setParticipants]);
 
   // Send updates while typing
   const handleEditorChange = (value) => {
@@ -75,12 +80,12 @@ function hello() {
 
   return (
     <Editor
-      height="85vh"
-      theme="vs-dark"
-      defaultLanguage="javascript"
-      value={code}
-      onMount={handleEditorDidMount}
-      onChange={handleEditorChange}
-    />
+  height="calc(100vh - 280px)"
+  language={language}
+  theme="vs-dark"
+  value={code}
+  onMount={handleEditorDidMount}
+  onChange={handleEditorChange}
+/>
   );
 }

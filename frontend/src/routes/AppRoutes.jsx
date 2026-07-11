@@ -8,6 +8,7 @@ import CreateRoom from "../features/rooms/pages/CreateRoom";
 import JoinRoom from "../features/rooms/pages/JoinRoom";
 import Room from "../features/rooms/pages/Room";
 
+import { EditorProvider } from "@/features/editor/context/EditorContext";
 export default function AppRoutes() {
   return (
     <BrowserRouter>
@@ -47,7 +48,9 @@ export default function AppRoutes() {
   path="/room/:roomCode"
   element={
     <ProtectedRoute>
-      <Room />
+      <EditorProvider>
+        <Room />
+      </EditorProvider>
     </ProtectedRoute>
   }
 />

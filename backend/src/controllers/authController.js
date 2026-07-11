@@ -3,6 +3,7 @@ const bcrypt = require("bcryptjs");
 
 const registerUser = async (req, res) => {
   try {
+    console.log(req.body);
     const { name, email, password } = req.body;
 
     // Basic validation

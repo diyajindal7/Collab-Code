@@ -11,7 +11,7 @@ const connectDB = require("./config/db");
 const authRoutes = require("./routes/authRoutes");
 const roomRoutes = require("./routes/roomRoutes");
 const socketHandler = require("./sockets/socketHandler");
-
+const judge0Routes = require("./routes/judge0Routes");
 
 connectDB();
 
@@ -31,7 +31,7 @@ app.get("/", (req, res) => {
 
 app.use("/api/auth", authRoutes);
 app.use("/api/rooms", roomRoutes);
-
+app.use("/api/judge0", judge0Routes);
 // Create HTTP Server
 const server = http.createServer(app);
 

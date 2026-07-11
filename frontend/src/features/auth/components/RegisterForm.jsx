@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 import { registerUser } from "../services/authService";
-
+import { toast } from "sonner";
 export default function RegisterForm() {
   const navigate = useNavigate();
 
@@ -25,21 +25,25 @@ export default function RegisterForm() {
 });
 
   const onSubmit = async (data) => {
-    try {
-      setLoading(true);
+  try {
+    setLoading(true);
 
-      await registerUser(data);
+    await registerUser(data);
 
-     toast.success("Account Created Successfully");
+    toast.success("Account Created Successfully");
 
-      navigate("/");
-    } catch (error) {
-      toast.error(error.response?.data?.message);
+    navigate("/");
+  } catch (error) {
+    console.log(error.response);
+    console.log(error.response?.data);
 
-    } finally {
-      setLoading(false);
-    }
-  };
+    toast.error(
+      error.response?.data?.message || "Registration Failed"
+    );
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <Card className="w-full max-w-md">

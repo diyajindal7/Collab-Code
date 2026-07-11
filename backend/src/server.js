@@ -10,12 +10,14 @@ const connectDB = require("./config/db");
 
 const authRoutes = require("./routes/authRoutes");
 const roomRoutes = require("./routes/roomRoutes");
-const socketHandler = require("./sockets/socketHandler");
 const judge0Routes = require("./routes/judge0Routes");
+const aiReviewRoutes = require("./routes/aiReviewRoutes");
+const socketHandler = require("./sockets/socketHandler");
 
 connectDB();
 
 const app = express();
+
 app.use(
   cors({
     origin: "http://localhost:5173",
@@ -26,16 +28,16 @@ app.use(
 app.use(express.json());
 
 app.get("/", (req, res) => {
-    res.send("Collaborative Coding Platform API");
+  res.send("Collaborative Coding Platform API");
 });
 
 app.use("/api/auth", authRoutes);
 app.use("/api/rooms", roomRoutes);
 app.use("/api/judge0", judge0Routes);
-// Create HTTP Server
+app.use("/api/ai", aiReviewRoutes);
+
 const server = http.createServer(app);
 
-// Create Socket.IO Server
 const io = new Server(server, {
   cors: {
     origin: "http://localhost:5173",
@@ -44,11 +46,10 @@ const io = new Server(server, {
   },
 });
 
-// Socket Connection
 socketHandler(io);
 
 const PORT = process.env.PORT || 5000;
 
 server.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });

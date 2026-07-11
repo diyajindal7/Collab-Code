@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { useEditor } from "@/features/editor/context/EditorContext";
 import { runCode } from "@/features/editor/services/judge0Service";
+import CodeReviewPanel from "@/features/ai/components/CodeReviewPanel";
 import Toolbar from "../components/Toolbar";
 import Participants from "../components/Participants";
 import InputPanel from "../components/InputPanel";
@@ -45,6 +46,8 @@ const normalizeExecution = (result) => {
 export default function Room() {
   const { roomCode } = useParams();
   const [language, setLanguage] = useState("javascript");
+  const [selectedCode, setSelectedCode] = useState("");
+
   const {
     code,
     stdin,
@@ -69,22 +72,19 @@ export default function Room() {
 
       setExecution(normalizeExecution(result));
     } catch (error) {
-  console.error(error);
+      console.error(error);
 
-  const message =
-    error.response?.data?.message ||
-    error.message ||
-    "Execution Failed";
-
-  setExecution({
-    output: message,
-    outputType: "stderr",
-    time: null,
-    memory: null,
-    status: null,
-  });
-}
-     finally {
+      setExecution({
+        output:
+          error.response?.data?.message ||
+          error.message ||
+          "Execution Failed",
+        outputType: "stderr",
+        time: null,
+        memory: null,
+        status: null,
+      });
+    } finally {
       setIsRunning(false);
     }
   };
@@ -92,7 +92,7 @@ export default function Room() {
   return (
     <ParticipantsProvider>
       <ChatProvider>
-        <div className="flex h-screen flex-col bg-slate-950">
+        <div className="flex h-screen flex-col overflow-hidden bg-slate-950">
           <Toolbar
             language={language}
             setLanguage={setLanguage}
@@ -101,19 +101,29 @@ export default function Room() {
             isRunning={isRunning}
           />
 
-          <div className="flex flex-1">
-            <div className="flex-1">
-              <CodeEditor language={language} />
+          <div className="flex min-h-0 flex-1 overflow-hidden">
+            <div className="min-h-0 min-w-0 flex-1 overflow-y-auto">
+              <CodeEditor
+                language={language}
+                onSelectionChange={setSelectedCode}
+              />
               <InputPanel />
               <OutputPanel />
             </div>
 
-            <div className="flex w-72 flex-col border-l border-slate-700">
+            <div className="flex min-h-0 w-72 shrink-0 flex-col border-l border-slate-700">
               <Participants />
 
-              <div className="flex-1 border-t border-slate-700">
+              <div className="min-h-0 flex-1 border-t border-slate-700">
                 <ChatPanel />
               </div>
+            </div>
+
+            <div className="min-h-0 w-96 shrink-0 overflow-y-auto border-l border-slate-700">
+              <CodeReviewPanel
+                language={language}
+                selectedCode={selectedCode}
+              />
             </div>
           </div>
         </div>

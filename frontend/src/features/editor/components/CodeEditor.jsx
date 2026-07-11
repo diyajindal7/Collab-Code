@@ -5,68 +5,79 @@ import socket from "../socket";
 import { useParticipants } from "@/features/rooms/context/ParticipantsContext";
 import { useEditor } from "../context/EditorContext";
 
-export default function CodeEditor({ language }) {
+export default function CodeEditor({
+  language,
+  onSelectionChange = () => {},
+}) {
   const { roomCode } = useParams();
 
   const editorRef = useRef(null);
   const isRemoteUpdate = useRef(false);
-const { setParticipants } = useParticipants();
 
-const { code, setCode } = useEditor();
+  const { setParticipants } = useParticipants();
+  const { code, setCode } = useEditor();
 
-  // Store Monaco editor instance
   const handleEditorDidMount = (editor) => {
     editorRef.current = editor;
-  };
 
-  // Join room when component loads
- useEffect(() => {
-  const user = JSON.parse(localStorage.getItem("user"));
+    editor.onDidChangeCursorSelection((event) => {
+      const model = editor.getModel();
 
-  socket.emit("join-room", {
-    roomCode,
-    user,
-  });
-
-  const handleLoadCode = (savedCode) => {
-    if (savedCode) {
-      setCode(savedCode);
-
-      if (editorRef.current) {
-        editorRef.current.setValue(savedCode);
+      if (!model || event.selection.isEmpty()) {
+        onSelectionChange("");
+        return;
       }
-    }
+
+      onSelectionChange(model.getValueInRange(event.selection));
+    });
   };
 
-  const handleReceiveCode = (newCode) => {
-    if (!editorRef.current) return;
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem("user"));
 
-    if (newCode !== editorRef.current.getValue()) {
-      isRemoteUpdate.current = true;
+    socket.emit("join-room", {
+      roomCode,
+      user,
+    });
 
-      editorRef.current.setValue(newCode);
-      setCode(newCode);
+    const handleLoadCode = (savedCode) => {
+      if (savedCode) {
+        setCode(savedCode);
 
-      isRemoteUpdate.current = false;
-    }
-  };
+        if (editorRef.current) {
+          editorRef.current.setValue(savedCode);
+        }
+      }
+    };
 
-  const handleParticipants = (users) => {
-    setParticipants(users);
-  };
+    const handleReceiveCode = (newCode) => {
+      if (!editorRef.current) return;
 
-  socket.on("load-code", handleLoadCode);
-  socket.on("receive-code", handleReceiveCode);
-  socket.on("participants-update", handleParticipants);
+      if (newCode !== editorRef.current.getValue()) {
+        isRemoteUpdate.current = true;
 
-  return () => {
-    socket.off("load-code", handleLoadCode);
-    socket.off("receive-code", handleReceiveCode);
-    socket.off("participants-update", handleParticipants);
-  };
-}, [roomCode, setParticipants]);
+        editorRef.current.setValue(newCode);
+        setCode(newCode);
 
-  // Send updates while typing
+        isRemoteUpdate.current = false;
+      }
+    };
+
+    const handleParticipants = (users) => {
+      setParticipants(users);
+    };
+
+    socket.on("load-code", handleLoadCode);
+    socket.on("receive-code", handleReceiveCode);
+    socket.on("participants-update", handleParticipants);
+
+    return () => {
+      socket.off("load-code", handleLoadCode);
+      socket.off("receive-code", handleReceiveCode);
+      socket.off("participants-update", handleParticipants);
+    };
+  }, [roomCode, setParticipants]);
+
   const handleEditorChange = (value) => {
     setCode(value);
 
@@ -80,12 +91,12 @@ const { code, setCode } = useEditor();
 
   return (
     <Editor
-  height="calc(100vh - 280px)"
-  language={language}
-  theme="vs-dark"
-  value={code}
-  onMount={handleEditorDidMount}
-  onChange={handleEditorChange}
-/>
+      height="calc(100vh - 280px)"
+      language={language}
+      theme="vs-dark"
+      value={code}
+      onMount={handleEditorDidMount}
+      onChange={handleEditorChange}
+    />
   );
 }

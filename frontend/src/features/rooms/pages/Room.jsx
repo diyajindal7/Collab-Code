@@ -11,12 +11,53 @@ import { ChatProvider } from "@/features/chat/context/ChatContext";
 import CodeEditor from "@/features/editor/components/CodeEditor";
 import { ParticipantsProvider } from "../context/ParticipantsContext";
 
+const normalizeExecution = (result) => {
+  let output = "No Output";
+  let outputType = "stdout";
+
+  if (result.compile_output) {
+    output = result.compile_output;
+    outputType = "compile_error";
+  } else if (result.stderr) {
+    output = result.stderr;
+    outputType = "stderr";
+  } else if (result.stdout) {
+    output = result.stdout;
+  } else if (result.message) {
+    output = result.message;
+    outputType = "stderr";
+  }
+
+  return {
+    output,
+    outputType,
+    time: result.time || null,
+    memory: result.memory ?? null,
+    status: result.status
+      ? {
+          id: result.status.id,
+          description: result.status.description,
+        }
+      : null,
+  };
+};
+
 export default function Room() {
   const { roomCode } = useParams();
   const [language, setLanguage] = useState("javascript");
-  const { code, stdin, setOutput, setIsRunning } = useEditor();
+  const {
+    code,
+    stdin,
+    isRunning,
+    setExecution,
+    setIsRunning,
+  } = useEditor();
 
   const handleRun = async () => {
+    if (isRunning) {
+      return;
+    }
+
     try {
       setIsRunning(true);
 
@@ -26,17 +67,24 @@ export default function Room() {
         stdin,
       });
 
-      setOutput(
-        result.compile_output ||
-          result.stderr ||
-          result.stdout ||
-          result.message ||
-          "No Output"
-      );
+      setExecution(normalizeExecution(result));
     } catch (error) {
-      console.error(error);
-      setOutput("Execution Failed");
-    } finally {
+  console.error(error);
+
+  const message =
+    error.response?.data?.message ||
+    error.message ||
+    "Execution Failed";
+
+  setExecution({
+    output: message,
+    outputType: "stderr",
+    time: null,
+    memory: null,
+    status: null,
+  });
+}
+     finally {
       setIsRunning(false);
     }
   };
@@ -50,6 +98,7 @@ export default function Room() {
             setLanguage={setLanguage}
             onRun={handleRun}
             roomCode={roomCode}
+            isRunning={isRunning}
           />
 
           <div className="flex flex-1">

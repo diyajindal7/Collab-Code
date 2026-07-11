@@ -5,26 +5,22 @@ export default function Toolbar({
   setLanguage,
   onRun,
   roomCode,
+  isRunning,
 }) {
-
   const copyRoomCode = () => {
     navigator.clipboard.writeText(roomCode);
     alert("Room code copied!");
   };
 
   return (
-    <div className="flex items-center justify-between bg-slate-900 border-b border-slate-700 px-5 py-3">
-
-      <h1 className="text-white font-bold text-xl">
-        ⚡ CollabCode
-      </h1>
+    <div className="flex items-center justify-between border-b border-slate-700 bg-slate-900 px-5 py-3">
+      <h1 className="text-xl font-bold text-white">⚡ CollabCode</h1>
 
       <div className="flex gap-3">
-
         <select
           value={language}
-          onChange={(e) => setLanguage(e.target.value)}
-          className="rounded px-3 py-2 bg-slate-800 text-white"
+          onChange={(event) => setLanguage(event.target.value)}
+          className="rounded bg-slate-800 px-3 py-2 text-white"
         >
           <option value="javascript">JavaScript</option>
           <option value="java">Java</option>
@@ -33,19 +29,14 @@ export default function Toolbar({
           <option value="c">C</option>
         </select>
 
-        <Button onClick={onRun}>
-          ▶ Run
+        <Button onClick={onRun} disabled={isRunning}>
+          {isRunning ? "Running..." : "▶ Run"}
         </Button>
 
-        <Button
-          variant="secondary"
-          onClick={copyRoomCode}
-        >
+        <Button variant="secondary" onClick={copyRoomCode}>
           Copy Room Code
         </Button>
-
       </div>
-
     </div>
   );
 }

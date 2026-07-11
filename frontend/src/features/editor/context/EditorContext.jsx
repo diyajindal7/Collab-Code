@@ -2,6 +2,14 @@ import { createContext, useContext, useState } from "react";
 
 const EditorContext = createContext();
 
+const initialExecution = {
+  output: "",
+  outputType: "stdout",
+  time: null,
+  memory: null,
+  status: null,
+};
+
 export function EditorProvider({ children }) {
   const [code, setCode] = useState(`// Welcome to CollabCode 🚀
 
@@ -11,7 +19,7 @@ function hello() {
 `);
 
   const [stdin, setStdin] = useState("");
-  const [output, setOutput] = useState("");
+  const [execution, setExecution] = useState(initialExecution);
   const [isRunning, setIsRunning] = useState(false);
 
   return (
@@ -21,8 +29,8 @@ function hello() {
         setCode,
         stdin,
         setStdin,
-        output,
-        setOutput,
+        execution,
+        setExecution,
         isRunning,
         setIsRunning,
       }}

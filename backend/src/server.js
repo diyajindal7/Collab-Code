@@ -12,6 +12,8 @@ const authRoutes = require("./routes/authRoutes");
 const roomRoutes = require("./routes/roomRoutes");
 const judge0Routes = require("./routes/judge0Routes");
 const aiReviewRoutes = require("./routes/aiReviewRoutes");
+const aiExplainRoutes = require("./routes/aiExplainRoutes");
+const aiFixRoutes = require("./routes/aiFixRoutes");
 const socketHandler = require("./sockets/socketHandler");
 
 connectDB();
@@ -35,6 +37,8 @@ app.use("/api/auth", authRoutes);
 app.use("/api/rooms", roomRoutes);
 app.use("/api/judge0", judge0Routes);
 app.use("/api/ai", aiReviewRoutes);
+app.use("/api/ai", aiExplainRoutes);
+app.use("/api/ai", aiFixRoutes);
 
 const server = http.createServer(app);
 

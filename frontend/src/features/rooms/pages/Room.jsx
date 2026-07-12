@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import { useEditor } from "@/features/editor/context/EditorContext";
 import { runCode } from "@/features/editor/services/judge0Service";
 import CodeReviewPanel from "@/features/ai/components/CodeReviewPanel";
+import CodeExplainPanel from "@/features/ai/components/CodeExplainPanel";
 import Toolbar from "../components/Toolbar";
 import Participants from "../components/Participants";
 import InputPanel from "../components/InputPanel";
@@ -119,8 +120,12 @@ export default function Room() {
               </div>
             </div>
 
-            <div className="min-h-0 w-96 shrink-0 overflow-y-auto border-l border-slate-700">
+            <div className="flex min-h-0 w-96 shrink-0 flex-col overflow-y-auto border-l border-slate-700">
               <CodeReviewPanel
+                language={language}
+                selectedCode={selectedCode}
+              />
+              <CodeExplainPanel
                 language={language}
                 selectedCode={selectedCode}
               />

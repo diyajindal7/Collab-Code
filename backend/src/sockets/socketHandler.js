@@ -60,6 +60,20 @@ const socketHandler = (io) => {
       });
     });
 
+    socket.on("selection:change", ({ roomId, userId, username, selection }) => {
+      socket.to(roomId).emit("selection:change", {
+        userId,
+        username,
+        selection,
+      });
+    });
+
+    socket.on("selection:clear", ({ roomId, userId }) => {
+      socket.to(roomId).emit("selection:clear", {
+        userId,
+      });
+    });
+
     
 
     // Chat
@@ -83,6 +97,10 @@ socket.on("send-message", ({ roomCode, message, user }) => {
       socket.to(socket.roomCode).emit("cursor:leave", {
         userId,
       });
+
+      socket.to(socket.roomCode).emit("selection:clear", {
+    userId,
+});
     }
 
     const sockets = await io.in(socket.roomCode).fetchSockets();

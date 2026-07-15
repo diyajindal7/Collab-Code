@@ -19,6 +19,8 @@ const roomSchema = new mongoose.Schema(
       required: true,
     },
 
+   
+
     participants: [
       {
         type: mongoose.Schema.Types.ObjectId,

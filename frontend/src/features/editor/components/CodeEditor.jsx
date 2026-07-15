@@ -21,7 +21,10 @@ export default function CodeEditor({
   const lastCursorLeaveRef = useRef(null);
   const cursorWidgetsRef = useRef({});
   const cursorColorsRef = useRef({});
+  const selectionDecorationsRef = useRef({});
+  const selectionStylesRef = useRef({});
   const [remoteCursors, setRemoteCursors] = useState({});
+  const [remoteSelections, setRemoteSelections] = useState({});
 
   const { setParticipants } = useParticipants();
   const { code, setCode } = useEditor();
@@ -48,6 +51,27 @@ export default function CodeEditor({
 
     cursorColorsRef.current[userId] = colors[colorIndex];
     return cursorColorsRef.current[userId];
+  };
+
+  const getSelectionClassName = (userId) => {
+    const className = `remote-selection-${String(userId).replace(/[^a-zA-Z0-9]/g, "-")}`;
+
+    if (selectionStylesRef.current[userId]) {
+      return className;
+    }
+
+    const color = getCursorColor(userId);
+    const styleNode = document.createElement("style");
+    styleNode.textContent = `
+      .${className} {
+        background-color: ${color}55;
+      }
+    `;
+
+    document.head.appendChild(styleNode);
+    selectionStylesRef.current[userId] = styleNode;
+
+    return className;
   };
 
   const createCursorWidget = ({ userId, username, position }) => {
@@ -150,6 +174,37 @@ export default function CodeEditor({
     lastCursorLeaveRef.current = leaveKey;
   };
 
+  const emitSelectionChange = (selection) => {
+    if (!userRef.current) return;
+
+    const userId = userRef.current._id || userRef.current.id;
+    const username = userRef.current.username || userRef.current.name;
+    const roomId = roomCodeRef.current;
+
+    if (!roomId || !userId || !selection) return;
+
+    socket.emit("selection:change", {
+      roomId,
+      userId,
+      username,
+      selection,
+    });
+  };
+
+  const emitSelectionClear = () => {
+    if (!userRef.current) return;
+
+    const userId = userRef.current._id || userRef.current.id;
+    const roomId = roomCodeRef.current;
+
+    if (!roomId || !userId) return;
+
+    socket.emit("selection:clear", {
+      roomId,
+      userId,
+    });
+  };
+
   const handleEditorDidMount = (editor) => {
     editorRef.current = editor;
 
@@ -158,10 +213,12 @@ export default function CodeEditor({
 
       if (!model || event.selection.isEmpty()) {
         onSelectionChange("");
+        emitSelectionClear();
         return;
       }
 
       onSelectionChange(model.getValueInRange(event.selection));
+      emitSelectionChange(event.selection);
     });
 
     if (cursorPositionDisposableRef.current) {
@@ -192,7 +249,15 @@ export default function CodeEditor({
         Object.values(cursorWidgetsRef.current).forEach((widget) => {
           editorRef.current.removeContentWidget(widget);
         });
+
+        Object.values(selectionDecorationsRef.current).forEach((decorationIds) => {
+          editorRef.current.deltaDecorations(decorationIds, []);
+        });
       }
+
+      Object.values(selectionStylesRef.current).forEach((styleNode) => {
+        styleNode.remove();
+      });
     };
   }, []);
 
@@ -226,6 +291,44 @@ export default function CodeEditor({
       editorRef.current.addContentWidget(widget);
     });
   }, [remoteCursors]);
+
+  useEffect(() => {
+    if (!editorRef.current) return;
+
+    Object.entries(selectionDecorationsRef.current).forEach(
+      ([userId, decorationIds]) => {
+        if (!remoteSelections[userId]) {
+          editorRef.current.deltaDecorations(decorationIds, []);
+          delete selectionDecorationsRef.current[userId];
+        }
+      }
+    );
+
+    Object.values(remoteSelections).forEach(({ userId, selection }) => {
+      if (
+        !selection ||
+        !selection.startLineNumber ||
+        !selection.startColumn ||
+        !selection.endLineNumber ||
+        !selection.endColumn
+      ) {
+        return;
+      }
+
+      const className = getSelectionClassName(userId);
+      const currentDecorations = selectionDecorationsRef.current[userId] || [];
+
+      selectionDecorationsRef.current[userId] =
+        editorRef.current.deltaDecorations(currentDecorations, [
+          {
+            range: selection,
+            options: {
+                 className: className,
+            },
+          },
+        ]);
+    });
+  }, [remoteSelections]);
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("user"));
@@ -283,11 +386,32 @@ export default function CodeEditor({
       });
     };
 
+    const handleSelectionChange = ({ userId, username, selection }) => {
+      setRemoteSelections((currentSelections) => ({
+        ...currentSelections,
+        [userId]: {
+          userId,
+          username,
+          selection,
+        },
+      }));
+    };
+
+    const handleSelectionClear = ({ userId }) => {
+      setRemoteSelections((currentSelections) => {
+        const updatedSelections = { ...currentSelections };
+        delete updatedSelections[userId];
+        return updatedSelections;
+      });
+    };
+
     socket.on("load-code", handleLoadCode);
     socket.on("receive-code", handleReceiveCode);
     socket.on("participants-update", handleParticipants);
     socket.on("cursor:move", handleCursorMove);
     socket.on("cursor:leave", handleCursorLeave);
+    socket.on("selection:change", handleSelectionChange);
+    socket.on("selection:clear", handleSelectionClear);
 
     return () => {
       emitCursorLeave();
@@ -297,6 +421,8 @@ export default function CodeEditor({
       socket.off("participants-update", handleParticipants);
       socket.off("cursor:move", handleCursorMove);
       socket.off("cursor:leave", handleCursorLeave);
+      socket.off("selection:change", handleSelectionChange);
+      socket.off("selection:clear", handleSelectionClear);
     };
   }, [roomCode, setParticipants]);
 
@@ -322,9 +448,6 @@ export default function CodeEditor({
     />
   );
 }
-
-
-
 
 
 

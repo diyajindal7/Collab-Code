@@ -49,6 +49,7 @@ export default function Room() {
   const [selectedCode, setSelectedCode] = useState("");
   const [editorWidth, setEditorWidth] = useState(70);
   const [showAiPanel, setShowAiPanel] = useState(true);
+  const [showSidebar, setShowSidebar] = useState(true);
   const splitContainerRef = useRef(null);
 
   const {
@@ -143,13 +144,35 @@ export default function Room() {
                 <OutputPanel />
               </div>
 
-              <div className="flex min-h-0 w-72 shrink-0 flex-col border-l border-slate-700">
-                <Participants />
+              {showSidebar ? (
+                <div className="relative flex min-h-0 w-72 shrink-0 flex-col border-l border-slate-700 transition-all duration-300">
+                  <button
+                    type="button"
+                    className="absolute left-0 top-1/2 z-10 h-7 w-7 -translate-x-1/2 -translate-y-1/2 rounded-full bg-slate-800 text-white shadow-lg transition-all duration-300 hover:bg-blue-600"
+                    onClick={() => setShowSidebar(false)}
+                    aria-label="Collapse participants and chat sidebar"
+                  >
+                    {"<"}
+                  </button>
 
-                <div className="min-h-0 flex-1 border-t border-slate-700">
-                  <ChatPanel />
+                  <Participants />
+
+                  <div className="min-h-0 flex-1 border-t border-slate-700">
+                    <ChatPanel />
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="relative flex w-2 shrink-0 items-center justify-center border-l border-slate-700 bg-slate-900 transition-all duration-300">
+                  <button
+                    type="button"
+                    className="absolute left-1/2 top-1/2 z-10 h-7 w-7 -translate-x-1/2 -translate-y-1/2 rounded-full bg-slate-800 text-white shadow-lg transition-all duration-300 hover:bg-blue-600"
+                    onClick={() => setShowSidebar(true)}
+                    aria-label="Expand participants and chat sidebar"
+                  >
+                    {">"}
+                  </button>
+                </div>
+              )}
             </div>
 
             {showAiPanel ? (

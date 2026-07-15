@@ -43,6 +43,23 @@ const socketHandler = (io) => {
       );
     });
 
+    // Cursor updates
+  socket.on("cursor:move", ({ roomId, userId, username, position }) => {
+  socket.to(roomId).emit("cursor:move", {
+    userId,
+    username,
+    position,
+  });
+});
+
+
+
+    socket.on("cursor:leave", ({ roomId, userId }) => {
+      socket.to(roomId).emit("cursor:leave", {
+        userId,
+      });
+    });
+
     
 
     // Chat
@@ -57,19 +74,27 @@ socket.on("send-message", ({ roomCode, message, user }) => {
 });
 
     socket.on("disconnect", async () => {
-      console.log(`User Disconnected: ${socket.id}`);
+  console.log(`User Disconnected: ${socket.id}`);
 
-      if (socket.roomCode) {
-        const sockets = await io.in(socket.roomCode).fetchSockets();
+  if (socket.roomCode) {
+    const userId = socket.user?._id || socket.user?.id;
 
-        const participants = sockets.map((s) => ({
-          id: s.id,
-          name: s.user?.name || "Anonymous",
-        }));
+    if (userId) {
+      socket.to(socket.roomCode).emit("cursor:leave", {
+        userId,
+      });
+    }
 
-        io.to(socket.roomCode).emit("participants-update", participants);
-      }
-    });
+    const sockets = await io.in(socket.roomCode).fetchSockets();
+
+    const participants = sockets.map((s) => ({
+      id: s.id,
+      name: s.user?.name || "Anonymous",
+    }));
+
+    io.to(socket.roomCode).emit("participants-update", participants);
+  }
+});
   });
 };
 

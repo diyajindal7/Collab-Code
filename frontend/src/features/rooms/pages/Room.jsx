@@ -1,10 +1,8 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useEditor } from "@/features/editor/context/EditorContext";
 import { runCode } from "@/features/editor/services/judge0Service";
-import CodeReviewPanel from "@/features/ai/components/CodeReviewPanel";
-import CodeExplainPanel from "@/features/ai/components/CodeExplainPanel";
-import CodeFixPanel from "@/features/ai/components/CodeFixPanel";
+import AiAssistantPanel from "@/features/ai/components/AiAssistantPanel";
 import Toolbar from "../components/Toolbar";
 import Participants from "../components/Participants";
 import InputPanel from "../components/InputPanel";
@@ -49,6 +47,8 @@ export default function Room() {
   const { roomCode } = useParams();
   const [language, setLanguage] = useState("javascript");
   const [selectedCode, setSelectedCode] = useState("");
+  const [editorWidth, setEditorWidth] = useState(70);
+  const splitContainerRef = useRef(null);
 
   const {
     code,
@@ -91,6 +91,28 @@ export default function Room() {
     }
   };
 
+  const handleResizeStart = (event) => {
+    event.preventDefault();
+
+    const handleResize = (event) => {
+      if (!splitContainerRef.current) return;
+
+      const containerRect = splitContainerRef.current.getBoundingClientRect();
+      const nextWidth =
+        ((event.clientX - containerRect.left) / containerRect.width) * 100;
+
+      setEditorWidth(Math.min(85, Math.max(40, nextWidth)));
+    };
+
+    const handleResizeEnd = () => {
+      window.removeEventListener("mousemove", handleResize);
+      window.removeEventListener("mouseup", handleResizeEnd);
+    };
+
+    window.addEventListener("mousemove", handleResize);
+    window.addEventListener("mouseup", handleResizeEnd);
+  };
+
   return (
     <ParticipantsProvider>
       <ChatProvider>
@@ -103,34 +125,47 @@ export default function Room() {
             isRunning={isRunning}
           />
 
-          <div className="flex min-h-0 flex-1 overflow-hidden">
-            <div className="min-h-0 min-w-0 flex-1 overflow-y-auto">
-              <CodeEditor
-                language={language}
-                onSelectionChange={setSelectedCode}
-              />
-              <InputPanel />
-              <OutputPanel />
-            </div>
+          <div
+            ref={splitContainerRef}
+            className="flex min-h-0 flex-1 overflow-hidden"
+          >
+            <div
+              className="flex min-h-0 min-w-0 overflow-hidden"
+              style={{ width: `${editorWidth}%` }}
+            >
+              <div className="min-h-0 min-w-0 flex-1 overflow-y-auto">
+                <CodeEditor
+                  language={language}
+                  onSelectionChange={setSelectedCode}
+                />
+                <InputPanel />
+                <OutputPanel />
+              </div>
 
-            <div className="flex min-h-0 w-72 shrink-0 flex-col border-l border-slate-700">
-              <Participants />
+              <div className="flex min-h-0 w-72 shrink-0 flex-col border-l border-slate-700">
+                <Participants />
 
-              <div className="min-h-0 flex-1 border-t border-slate-700">
-                <ChatPanel />
+                <div className="min-h-0 flex-1 border-t border-slate-700">
+                  <ChatPanel />
+                </div>
               </div>
             </div>
 
-            <div className="flex min-h-0 w-96 shrink-0 flex-col overflow-y-auto border-l border-slate-700">
-              <CodeReviewPanel
-                language={language}
-                selectedCode={selectedCode}
-              />
-              <CodeExplainPanel
-                language={language}
-                selectedCode={selectedCode}
-              />
-              <CodeFixPanel
+            <div
+              className="group relative flex w-2 cursor-col-resize items-center justify-center bg-slate-800 hover:bg-blue-500"
+              onMouseDown={handleResizeStart}
+              role="separator"
+              aria-orientation="vertical"
+              aria-label="Resize editor and AI panels"
+            >
+              <div className="h-10 w-1 rounded-full bg-slate-500 group-hover:bg-white" />
+            </div>
+
+            <div
+              className="flex min-h-0 min-w-0 flex-col overflow-y-auto border-l border-slate-700"
+              style={{ width: `${100 - editorWidth}%` }}
+            >
+              <AiAssistantPanel
                 language={language}
                 selectedCode={selectedCode}
               />

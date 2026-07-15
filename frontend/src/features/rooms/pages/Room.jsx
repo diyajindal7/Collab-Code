@@ -48,6 +48,7 @@ export default function Room() {
   const [language, setLanguage] = useState("javascript");
   const [selectedCode, setSelectedCode] = useState("");
   const [editorWidth, setEditorWidth] = useState(70);
+  const [showAiPanel, setShowAiPanel] = useState(true);
   const splitContainerRef = useRef(null);
 
   const {
@@ -130,8 +131,8 @@ export default function Room() {
             className="flex min-h-0 flex-1 overflow-hidden"
           >
             <div
-              className="flex min-h-0 min-w-0 overflow-hidden"
-              style={{ width: `${editorWidth}%` }}
+              className="flex min-h-0 min-w-0 overflow-hidden transition-all duration-300"
+              style={{ width: showAiPanel ? `${editorWidth}%` : "100%" }}
             >
               <div className="min-h-0 min-w-0 flex-1 overflow-y-auto">
                 <CodeEditor
@@ -151,25 +152,48 @@ export default function Room() {
               </div>
             </div>
 
-            <div
-              className="group relative flex w-2 cursor-col-resize items-center justify-center bg-slate-800 hover:bg-blue-500"
-              onMouseDown={handleResizeStart}
-              role="separator"
-              aria-orientation="vertical"
-              aria-label="Resize editor and AI panels"
-            >
-              <div className="h-10 w-1 rounded-full bg-slate-500 group-hover:bg-white" />
-            </div>
+            {showAiPanel ? (
+              <>
+                <div
+                  className="group relative flex w-2 cursor-col-resize items-center justify-center bg-slate-800 transition-all duration-300 hover:bg-blue-500"
+                  onMouseDown={handleResizeStart}
+                  role="separator"
+                  aria-orientation="vertical"
+                  aria-label="Resize editor and AI panels"
+                >
+                  <div className="h-10 w-1 rounded-full bg-slate-500 group-hover:bg-white" />
+                  <button
+                    type="button"
+                    className="absolute left-1/2 top-1/2 z-10 h-7 w-7 -translate-x-1/2 -translate-y-1/2 rounded-full bg-slate-800 text-white shadow-lg transition-all duration-300 hover:bg-blue-600"
+                    onClick={() => setShowAiPanel(false)}
+                    aria-label="Collapse AI panel"
+                  >
+                    {"<"}
+                  </button>
+                </div>
 
-            <div
-              className="flex min-h-0 min-w-0 flex-col overflow-y-auto border-l border-slate-700"
-              style={{ width: `${100 - editorWidth}%` }}
-            >
-              <AiAssistantPanel
-                language={language}
-                selectedCode={selectedCode}
-              />
-            </div>
+                <div
+                  className="flex min-h-0 min-w-0 flex-col overflow-y-auto border-l border-slate-700 transition-all duration-300"
+                  style={{ width: `${100 - editorWidth}%` }}
+                >
+                  <AiAssistantPanel
+                    language={language}
+                    selectedCode={selectedCode}
+                  />
+                </div>
+              </>
+            ) : (
+              <div className="relative flex w-2 shrink-0 items-center justify-center border-l border-slate-700 bg-slate-900 transition-all duration-300">
+                <button
+                  type="button"
+                  className="absolute left-1/2 top-1/2 z-10 h-7 w-7 -translate-x-1/2 -translate-y-1/2 rounded-full bg-slate-800 text-white shadow-lg transition-all duration-300 hover:bg-blue-600"
+                  onClick={() => setShowAiPanel(true)}
+                  aria-label="Expand AI panel"
+                >
+                  {">"}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </ChatProvider>

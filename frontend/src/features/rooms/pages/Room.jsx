@@ -4,6 +4,7 @@ import { useEditor } from "@/features/editor/context/EditorContext";
 import { runCode } from "@/features/editor/services/judge0Service";
 import CodeReviewPanel from "@/features/ai/components/CodeReviewPanel";
 import CodeExplainPanel from "@/features/ai/components/CodeExplainPanel";
+import CodeFixPanel from "@/features/ai/components/CodeFixPanel";
 import Toolbar from "../components/Toolbar";
 import Participants from "../components/Participants";
 import InputPanel from "../components/InputPanel";
@@ -126,6 +127,10 @@ export default function Room() {
                 selectedCode={selectedCode}
               />
               <CodeExplainPanel
+                language={language}
+                selectedCode={selectedCode}
+              />
+              <CodeFixPanel
                 language={language}
                 selectedCode={selectedCode}
               />

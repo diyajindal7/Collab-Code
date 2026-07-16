@@ -19,6 +19,32 @@ const roomSchema = new mongoose.Schema(
       required: true,
     },
 
+    interviewMode: {
+      type: Boolean,
+      default: false,
+    },
+
+    interviewer: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+
+    interviewStatus: {
+      type: String,
+      enum: [
+        "waiting",
+        "active",
+        "completed",
+      ],
+      default: "waiting",
+    },
+
+    duration: {
+      type: Number,
+      default: 45,
+    },
+
    
 
     participants: [

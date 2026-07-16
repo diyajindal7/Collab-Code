@@ -20,9 +20,7 @@ export default function Participants() {
             className="flex items-center gap-2"
           >
 
-            <span className="text-green-400">
-              🟢
-            </span>
+            <span className="h-2.5 w-2.5 rounded-full bg-green-500 shadow-[0_0_6px_#22c55e]" />
 
             <span>
               {user.name}

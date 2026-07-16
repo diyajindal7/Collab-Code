@@ -4,7 +4,7 @@ const generateRoomCode = require("../utils/generateRoomCode");
 
 const createRoom = async (req, res) => {
   try {
-    const { title, language } = req.body;
+    const { title, language, interviewMode = false, duration = 45 } = req.body;
 
     if (!title || !language) {
       return res.status(400).json({
@@ -29,6 +29,10 @@ const createRoom = async (req, res) => {
       roomCode,
       title,
       owner,
+      interviewMode,
+      interviewer: interviewMode ? owner : null,
+interviewStatus: "waiting",
+      duration,
       participants: [owner],
       language,
       code: ""

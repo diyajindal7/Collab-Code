@@ -17,10 +17,19 @@ useEffect(() => {
     setMessages((prev) => [...prev, message]);
   };
 
+  const handleSystemMessage = (message) => {
+    setMessages((prev) => [...prev, {
+      ...message,
+      system: true,
+    }]);
+  };
+
   socket.on("receive-message", handleMessage);
+  socket.on("system-message", handleSystemMessage);
 
   return () => {
     socket.off("receive-message", handleMessage);
+    socket.off("system-message", handleSystemMessage);
   };
 }, [setMessages]);
 
@@ -51,8 +60,21 @@ useEffect(() => {
 
         {messages.map((msg, index) => (
 
-          <div key={index}>
+          <div key={`${msg.type || "chat"}-${index}`}>
 
+            {msg.system ? (
+              <div className="flex justify-center">
+                <div
+                  className={`rounded-full px-3 py-1 text-center text-xs ${
+                    msg.type === "join"
+                      ? "bg-green-500/15 border border-green-500/30 text-green-300 text-green-200"
+                      : "bg-red-500/15 border border-red-500/30 text-red-300 text-red-200"
+                  }`}
+                >
+                  {msg.type === "join" ? "\uD83D\uDFE2" : "\uD83D\uDD34"} {msg.message}
+                </div>
+              </div>
+            ) : (
             <div className="bg-slate-800 rounded-lg p-2">
   <div className="flex justify-between text-sm mb-1">
     <span className="font-semibold text-cyan-400">
@@ -66,6 +88,7 @@ useEffect(() => {
 
   <p>{msg.message}</p>
 </div>
+            )}
 
           </div>
 

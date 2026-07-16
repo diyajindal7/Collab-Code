@@ -30,6 +30,12 @@ const socketHandler = (io) => {
       console.log("Sockets in room:", sockets.length);
       console.log("Participants:", participants);
 
+      io.to(roomCode).emit("system-message", {
+        type: "join",
+        username: user.name,
+        message: `${user.name} joined the room`,
+      });
+
       io.to(roomCode).emit("participants-update", participants);
     });
 
@@ -77,6 +83,18 @@ const socketHandler = (io) => {
     
 
     // Chat
+socket.on("typing:start", ({ roomCode, username }) => {
+  socket.to(roomCode).emit("typing:start", {
+    username,
+  });
+});
+
+socket.on("typing:stop", ({ roomCode, username }) => {
+  socket.to(roomCode).emit("typing:stop", {
+    username,
+  });
+});
+
 socket.on("send-message", ({ roomCode, message, user }) => {
 
   io.to(roomCode).emit("receive-message", {
@@ -92,6 +110,14 @@ socket.on("send-message", ({ roomCode, message, user }) => {
 
   if (socket.roomCode) {
     const userId = socket.user?._id || socket.user?.id;
+
+    if (socket.user) {
+      socket.to(socket.roomCode).emit("system-message", {
+        type: "leave",
+        username: socket.user.name,
+        message: `${socket.user.name} left the room`,
+      });
+    }
 
     if (userId) {
       socket.to(socket.roomCode).emit("cursor:leave", {

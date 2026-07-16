@@ -1,7 +1,7 @@
 import { toast } from "sonner";
 import { Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { loginSchema } from "../validation/authSchema";
@@ -65,6 +65,9 @@ const {
           onSubmit={handleSubmit(onSubmit)}
           className="space-y-5"
         >
+
+
+          
           <div>
             <Label>Email</Label>
 
@@ -112,7 +115,19 @@ const {
           >
             {loading ? "Signing In..." : "Login"}
           </Button>
+
+
+
         </form>
+        <p className="mt-5 text-center text-sm text-slate-500">
+  Don't have an account?{" "}
+  <Link
+    to="/register"
+    className="font-semibold text-blue-600 hover:underline"
+  >
+    Register
+  </Link>
+</p>
       </CardContent>
     </Card>
   );

@@ -22,10 +22,11 @@ const app = express();
 
 app.use(
   cors({
-  origin: [
-  "http://localhost:5173",
-  "https://collab-code-pi.vercel.app",
-],
+    origin: [
+      "http://localhost:5173",
+      "https://collab-code-pi.vercel.app",
+      /\.vercel\.app$/,
+    ],
     credentials: true,
   })
 );
@@ -50,6 +51,7 @@ const io = new Server(server, {
     origin: [
       "http://localhost:5173",
       "https://collab-code-pi.vercel.app",
+      /\.vercel\.app$/,
     ],
     methods: ["GET", "POST"],
     credentials: true,

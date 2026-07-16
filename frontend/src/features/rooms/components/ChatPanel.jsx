@@ -10,10 +10,12 @@ export default function ChatPanel() {
   const { messages, setMessages } = useChat();
 
   const [text, setText] = useState("");
+  const [typingUser, setTypingUser] = useState("");
   const typingTimeoutRef = useRef(null);
   const isTypingRef = useRef(false);
-
   const user = JSON.parse(localStorage.getItem("user"));
+  const username = user?.name;
+
   const emitTypingStop = () => {
     if (!isTypingRef.current) return;
 
@@ -65,12 +67,28 @@ useEffect(() => {
     }]);
   };
 
+ const handleTypingStart = ({ username: receivedUsername }) => {
+  if (receivedUsername === username) return;
+
+  setTypingUser(receivedUsername);
+};
+
+const handleTypingStop = ({ username: receivedUsername }) => {
+  if (receivedUsername === username) return;
+
+  setTypingUser("");
+};
+
   socket.on("receive-message", handleMessage);
   socket.on("system-message", handleSystemMessage);
+  socket.on("typing:start", handleTypingStart);
+  socket.on("typing:stop", handleTypingStop);
 
   return () => {
     socket.off("receive-message", handleMessage);
     socket.off("system-message", handleSystemMessage);
+    socket.off("typing:start", handleTypingStart);
+    socket.off("typing:stop", handleTypingStop);
 
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
@@ -146,6 +164,10 @@ useEffect(() => {
 
         ))}
 
+      </div>
+
+      <div className="px-3 pb-2 text-sm italic text-slate-400 transition-all duration-300">
+        {typingUser ? `\uD83D\uDCAC ${typingUser} is typing...` : ""}
       </div>
 
      <div className="p-3 flex gap-2 border-t border-slate-700">

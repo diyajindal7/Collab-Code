@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
 
 import socket from "@/features/editor/socket";
@@ -10,8 +10,49 @@ export default function ChatPanel() {
   const { messages, setMessages } = useChat();
 
   const [text, setText] = useState("");
+  const typingTimeoutRef = useRef(null);
+  const isTypingRef = useRef(false);
 
   const user = JSON.parse(localStorage.getItem("user"));
+  const emitTypingStop = () => {
+    if (!isTypingRef.current) return;
+
+    socket.emit("typing:stop", {
+      roomCode,
+      username: user.name,
+    });
+
+    isTypingRef.current = false;
+  };
+
+  const handleInputChange = (event) => {
+    const value = event.target.value;
+
+    setText(value);
+
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+
+    if (!value.trim()) {
+      emitTypingStop();
+      return;
+    }
+
+    if (!isTypingRef.current) {
+      socket.emit("typing:start", {
+        roomCode,
+        username: user.name,
+      });
+
+      isTypingRef.current = true;
+    }
+
+    typingTimeoutRef.current = setTimeout(() => {
+      emitTypingStop();
+    }, 1000);
+  };
+
 useEffect(() => {
   const handleMessage = (message) => {
     setMessages((prev) => [...prev, message]);
@@ -30,6 +71,12 @@ useEffect(() => {
   return () => {
     socket.off("receive-message", handleMessage);
     socket.off("system-message", handleSystemMessage);
+
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+
+    emitTypingStop();
   };
 }, [setMessages]);
 
@@ -43,6 +90,11 @@ useEffect(() => {
       user: user.name,
     });
 
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+
+    emitTypingStop();
     setText("");
 
   };
@@ -67,8 +119,8 @@ useEffect(() => {
                 <div
                   className={`rounded-full px-3 py-1 text-center text-xs ${
                     msg.type === "join"
-                      ? "bg-green-500/15 border border-green-500/30 text-green-300 text-green-200"
-                      : "bg-red-500/15 border border-red-500/30 text-red-300 text-red-200"
+                      ? "bg-green-500/15 border border-green-500/30 text-green-300"
+                      : "bg-red-500/15 border border-red-500/30 text-red-300"
                   }`}
                 >
                   {msg.type === "join" ? "\uD83D\uDFE2" : "\uD83D\uDD34"} {msg.message}
@@ -102,7 +154,7 @@ useEffect(() => {
     className="flex-1 rounded-lg bg-slate-800 px-3 py-2 outline-none"
     placeholder="Type a message..."
     value={text}
-    onChange={(e) => setText(e.target.value)}
+    onChange={handleInputChange}
     onKeyDown={(e) => {
       if (e.key === "Enter") sendMessage();
     }}

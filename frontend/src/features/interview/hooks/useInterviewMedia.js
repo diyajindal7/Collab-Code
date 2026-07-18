@@ -38,6 +38,7 @@ export const useInterviewMedia = ({ roomCode, role }) => {
   const [localRecordingUrl, setLocalRecordingUrl] = useState("");
   const [mediaError, setMediaError] = useState("");
   const [networkStatus, setNetworkStatus] = useState("disconnected");
+  const localRecordingUrlRef = useRef("");
   const localStreamRef = useRef(null);
   const screenStreamRef = useRef(null);
   const peerConnectionsRef = useRef({});
@@ -360,7 +361,13 @@ export const useInterviewMedia = ({ roomCode, role }) => {
         return;
       }
 
-      setLocalRecordingUrl(URL.createObjectURL(blob));
+      if (localRecordingUrlRef.current) {
+        URL.revokeObjectURL(localRecordingUrlRef.current);
+      }
+
+      const recordingUrl = URL.createObjectURL(blob);
+      localRecordingUrlRef.current = recordingUrl;
+      setLocalRecordingUrl(recordingUrl);
       setRecordingState("uploading");
       updateLocalStatus({
         recording: "uploading",
@@ -446,6 +453,11 @@ export const useInterviewMedia = ({ roomCode, role }) => {
     Object.values(peerConnectionsRef.current).forEach((peerConnection) => {
       peerConnection.close();
     });
+
+    if (localRecordingUrlRef.current) {
+      URL.revokeObjectURL(localRecordingUrlRef.current);
+      localRecordingUrlRef.current = "";
+    }
 
     peerConnectionsRef.current = {};
     localStreamRef.current = null;

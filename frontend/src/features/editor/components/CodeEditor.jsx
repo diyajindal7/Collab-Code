@@ -21,11 +21,13 @@ export default function CodeEditor({
   const userRef = useRef(null);
   const roomCodeRef = useRef(roomCode);
   const cursorPositionDisposableRef = useRef(null);
+  const selectionDisposableRef = useRef(null);
   const scrollDisposableRef = useRef(null);
   const cursorThrottleTimeoutRef = useRef(null);
   const followThrottleTimeoutRef = useRef(null);
   const lastCursorEmitRef = useRef(0);
   const lastCursorLeaveRef = useRef(null);
+  const followTargetRef = useRef(followTarget);
   const cursorWidgetsRef = useRef({});
   const cursorColorsRef = useRef({});
   const selectionDecorationsRef = useRef({});
@@ -238,7 +240,11 @@ export default function CodeEditor({
   const handleEditorDidMount = (editor) => {
     editorRef.current = editor;
 
-    editor.onDidChangeCursorSelection((event) => {
+    if (selectionDisposableRef.current) {
+      selectionDisposableRef.current.dispose();
+    }
+
+    selectionDisposableRef.current = editor.onDidChangeCursorSelection((event) => {
       const model = editor.getModel();
 
       if (!model || event.selection.isEmpty()) {
@@ -278,6 +284,10 @@ export default function CodeEditor({
   }, [roomCode]);
 
   useEffect(() => {
+    followTargetRef.current = followTarget;
+  }, [followTarget]);
+
+  useEffect(() => {
     return () => {
       emitCursorLeave();
 
@@ -291,6 +301,10 @@ export default function CodeEditor({
 
       if (cursorPositionDisposableRef.current) {
         cursorPositionDisposableRef.current.dispose();
+      }
+
+      if (selectionDisposableRef.current) {
+        selectionDisposableRef.current.dispose();
       }
 
       if (scrollDisposableRef.current) {
@@ -474,7 +488,12 @@ export default function CodeEditor({
 
     const handlePairFollowUpdate = ({ userId, payload }) => {
       if (!editorRef.current || !payload) return;
-      if (!followTarget || userId?.toString() !== followTarget?.toString()) return;
+      if (
+        !followTargetRef.current ||
+        userId?.toString() !== followTargetRef.current?.toString()
+      ) {
+        return;
+      }
 
       if (payload.position) {
         editorRef.current.revealPositionInCenterIfOutsideViewport(
@@ -508,7 +527,7 @@ export default function CodeEditor({
       socket.off("selection:clear", handleSelectionClear);
       socket.off("pair:follow:update", handlePairFollowUpdate);
     };
-  }, [roomCode, setParticipants, followTarget]);
+  }, [roomCode, setCode, setParticipants]);
 
   const handleEditorChange = (value) => {
     if (isRemoteUpdate.current) {

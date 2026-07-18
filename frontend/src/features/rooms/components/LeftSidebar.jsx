@@ -1,6 +1,7 @@
 import ChatPanel from "./ChatPanel";
 import Participants from "./Participants";
 import PairProgrammingPanel from "./PairProgrammingPanel";
+import ContestPanel from "@/features/contests/components/ContestPanel";
 import InterviewPanel from "@/features/interview/components/InterviewPanel";
 import FileExplorer from "@/features/files/components/FileExplorer";
 
@@ -10,6 +11,7 @@ const leftPanels = [
   { id: "chat", label: "Chat", icon: "💬" },
   { id: "interview", label: "Interview", icon: "🎥" },
   { id: "pair", label: "Pair", icon: "🤝" },
+  { id: "contest", label: "Contest", icon: "🏆" },
 ];
 
 export default function LeftSidebar({
@@ -23,6 +25,7 @@ export default function LeftSidebar({
   interviewState,
   pairState,
   setPairState,
+  contestState,
   isOwner,
 }) {
   return (
@@ -68,6 +71,8 @@ export default function LeftSidebar({
               setPairState={setPairState}
             />
           </div>
+        ) : activePanel === "contest" ? (
+          <ContestPanel contestState={contestState} isOwner={isOwner} />
         ) : (
           <FileExplorer
             roomCode={roomCode}

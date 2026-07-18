@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import socket from "@/features/editor/socket";
 import {
   deleteInterviewRecording,
@@ -99,7 +99,7 @@ export default function InterviewPanel({ roomCode, role, initialState }) {
     (peer) => media.participantStatuses[peer.socketId]?.screen
   );
 
-  const loadRecordings = async () => {
+  const loadRecordings = useCallback(async () => {
     try {
       setRecordingsLoading(true);
       const data = await getInterviewRecordings(roomCode);
@@ -109,7 +109,7 @@ export default function InterviewPanel({ roomCode, role, initialState }) {
     } finally {
       setRecordingsLoading(false);
     }
-  };
+  }, [roomCode]);
 
   useEffect(() => {
     const handleState = (nextState) => {
@@ -152,7 +152,9 @@ export default function InterviewPanel({ roomCode, role, initialState }) {
   }, []);
 
   useEffect(() => {
-    setRemainingSeconds(calculateRemainingSeconds(interviewState));
+    queueMicrotask(() => {
+      setRemainingSeconds(calculateRemainingSeconds(interviewState));
+    });
 
     if (interviewState.status !== "active") {
       return undefined;
@@ -166,14 +168,18 @@ export default function InterviewPanel({ roomCode, role, initialState }) {
   }, [interviewState]);
 
   useEffect(() => {
-    loadRecordings();
-  }, [roomCode]);
+    queueMicrotask(() => {
+      loadRecordings();
+    });
+  }, [loadRecordings]);
 
   useEffect(() => {
     if (media.recordingState === "saved") {
-      loadRecordings();
+      queueMicrotask(() => {
+        loadRecordings();
+      });
     }
-  }, [media.recordingState]);
+  }, [loadRecordings, media.recordingState]);
 
   useEffect(() => {
     if (
@@ -194,11 +200,11 @@ export default function InterviewPanel({ roomCode, role, initialState }) {
     });
   };
 
-  const saveNotes = () => {
+  const saveNotes = useCallback(() => {
     emitControl("interview:notes:update", {
       notes: notesDraft,
     });
-  };
+  }, [notesDraft]);
 
   const saveEvaluation = () => {
     emitControl("interview:evaluation:update", {
@@ -247,7 +253,7 @@ export default function InterviewPanel({ roomCode, role, initialState }) {
         window.clearTimeout(notesAutosaveRef.current);
       }
     };
-  }, [interviewerCanEdit, notesDraft, interviewState.notes]);
+  }, [interviewerCanEdit, notesDraft, interviewState.notes, saveNotes]);
 
   return (
     <div className="border-b border-slate-700 bg-slate-950 px-5 py-4 text-white">

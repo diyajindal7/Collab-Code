@@ -1,4 +1,6 @@
 const Room = require("../models/Room");
+const Contest = require("../models/Contest");
+const { buildLeaderboard } = require("../controllers/contestController");
 
 const interviewTimers = {};
 
@@ -436,6 +438,63 @@ const socketHandler = (io) => {
         username: user?.name || socket.user?.name || "Participant",
         message: `${user?.name || socket.user?.name || "Participant"} started ${action}`,
       });
+    });
+
+    socket.on("contest:start", async ({ roomCode, contestId }) => {
+      const room = await Room.findOne({ roomCode });
+      const contest = await Contest.findById(contestId);
+      if (!room || !contest || room.owner.toString() !== getUserId(socket.user)?.toString()) return;
+
+      contest.status = "running";
+      contest.startTime = contest.startTime || new Date();
+      await contest.save();
+      io.to(roomCode).emit("contest:status", { contest });
+    });
+
+    socket.on("contest:pause", async ({ roomCode, contestId }) => {
+      const room = await Room.findOne({ roomCode });
+      const contest = await Contest.findById(contestId);
+      if (!room || !contest || room.owner.toString() !== getUserId(socket.user)?.toString()) return;
+
+      contest.status = "paused";
+      await contest.save();
+      io.to(roomCode).emit("contest:status", { contest });
+    });
+
+    socket.on("contest:resume", async ({ roomCode, contestId }) => {
+      const room = await Room.findOne({ roomCode });
+      const contest = await Contest.findById(contestId);
+      if (!room || !contest || room.owner.toString() !== getUserId(socket.user)?.toString()) return;
+
+      contest.status = "running";
+      await contest.save();
+      io.to(roomCode).emit("contest:status", { contest });
+    });
+
+    socket.on("contest:end", async ({ roomCode, contestId }) => {
+      const room = await Room.findOne({ roomCode });
+      const contest = await Contest.findById(contestId);
+      if (!room || !contest || room.owner.toString() !== getUserId(socket.user)?.toString()) return;
+
+      contest.status = "ended";
+      await contest.save();
+      io.to(roomCode).emit("contest:status", { contest });
+    });
+
+    socket.on("contest:leaderboard", async ({ roomCode, contestId }) => {
+      const leaderboard = await buildLeaderboard(contestId);
+      io.to(roomCode).emit("contest:leaderboard", { leaderboard });
+    });
+
+    socket.on("contest:submission", async ({ roomCode, contestId }) => {
+      const contest = await Contest.findById(contestId);
+      const leaderboard = contest?.leaderboardFrozen ? [] : await buildLeaderboard(contestId);
+      io.to(roomCode).emit("contest:leaderboard", { leaderboard });
+      io.to(roomCode).emit("contest:submission", { contestId });
+    });
+
+    socket.on("contest:problem:update", ({ roomCode, contestId }) => {
+      socket.to(roomCode).emit("contest:problem:update", { contestId });
     });
 
     socket.on("start-interview", async ({ roomCode }) => {

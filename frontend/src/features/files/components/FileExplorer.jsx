@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import socket from "@/features/editor/socket";
 import {
   createFile,
@@ -149,11 +149,13 @@ export default function FileExplorer({
     const storedRecentFiles = localStorage.getItem(`recent-files:${roomCode}`);
 
     if (storedRecentFiles) {
-      setRecentFiles(JSON.parse(storedRecentFiles));
+      queueMicrotask(() => {
+        setRecentFiles(JSON.parse(storedRecentFiles));
+      });
     }
   }, [roomCode]);
 
-  const loadFiles = async () => {
+  const loadFiles = useCallback(async () => {
     if (!roomCode) return;
 
     try {
@@ -166,11 +168,13 @@ export default function FileExplorer({
     } finally {
       setLoading(false);
     }
-  };
+  }, [onTreeChange, roomCode]);
 
   useEffect(() => {
-    loadFiles();
-  }, [roomCode]);
+    queueMicrotask(() => {
+      loadFiles();
+    });
+  }, [loadFiles]);
 
   useEffect(() => {
     const handleTreeChanged = () => {
@@ -182,7 +186,7 @@ export default function FileExplorer({
     return () => {
       socket.off("pair:file-tree-changed", handleTreeChanged);
     };
-  }, [roomCode]);
+  }, [loadFiles]);
 
   const rememberRecentFile = (file) => {
     if (!file || file.type !== "file") return;

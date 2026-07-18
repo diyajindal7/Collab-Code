@@ -1,5 +1,8 @@
 import InputPanel from "./InputPanel";
 import OutputPanel from "./OutputPanel";
+import ContestLeaderboard from "@/features/contests/components/ContestLeaderboard";
+import ContestProblemStatement from "@/features/contests/components/ContestProblemStatement";
+import ContestSubmissions from "@/features/contests/components/ContestSubmissions";
 
 const bottomTabs = [
   { id: "output", label: "Output" },
@@ -8,6 +11,9 @@ const bottomTabs = [
   { id: "question", label: "Coding Question" },
   { id: "notes", label: "Interviewer Notes" },
   { id: "evaluation", label: "Evaluation" },
+  { id: "contest-problem", label: "Problem Statement" },
+  { id: "contest-submissions", label: "Submissions" },
+  { id: "contest-leaderboard", label: "Leaderboard" },
 ];
 
 export default function BottomPanel({
@@ -20,6 +26,7 @@ export default function BottomPanel({
   setSelectedExecution,
   loadExecutionHistory,
   interviewState,
+  contestState,
 }) {
   return (
     <section
@@ -136,6 +143,12 @@ export default function BottomPanel({
                 )
               )}
             </div>
+          ) : activeTab === "contest-problem" ? (
+            <ContestProblemStatement contestState={contestState} />
+          ) : activeTab === "contest-submissions" ? (
+            <ContestSubmissions submissions={contestState?.submissions || []} />
+          ) : activeTab === "contest-leaderboard" ? (
+            <ContestLeaderboard leaderboard={contestState?.leaderboard || []} />
           ) : (
             <OutputPanel />
           )}

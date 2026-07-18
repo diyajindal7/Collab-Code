@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import socket from "@/features/editor/socket";
 import { ChatProvider } from "@/features/chat/context/ChatContext";
@@ -10,6 +10,7 @@ import RoomLayout from "../components/RoomLayout";
 import RoomSettingsModal from "../components/RoomSettingsModal";
 import TopNavbar from "../components/TopNavbar";
 import Workspace from "../components/Workspace";
+import useContest from "@/features/contests/hooks/useContest";
 import useExecution from "../hooks/useExecution";
 import useInterview from "../hooks/useInterview";
 import usePairProgramming from "../hooks/usePairProgramming";
@@ -29,6 +30,7 @@ export default function Room() {
   const [activeLeftPanel, setActiveLeftPanel] = useState("files");
   const [activeBottomTab, setActiveBottomTab] = useState("output");
   const [isBottomPanelOpen, setIsBottomPanelOpen] = useState(true);
+  const openFileRef = useRef(null);
 
   const recording = useRecording(roomCode);
   const interview = useInterview(roomCode, recording.stopRecording);
@@ -40,7 +42,7 @@ export default function Room() {
     setTimeRemaining: interview.setTimeRemaining,
   });
   const pair = usePairProgramming(roomCode, (...args) =>
-    workspace.openFile(...args)
+    openFileRef.current?.(...args)
   );
   const workspace = useWorkspace(
     roomCode,
@@ -49,6 +51,11 @@ export default function Room() {
     pair.pairState
   );
   const execution = useExecution(roomCode, language);
+  const contest = useContest(roomCode, language);
+
+  useEffect(() => {
+    openFileRef.current = workspace.openFile;
+  }, [workspace.openFile]);
 
   useEffect(() => {
     execution.reloadHistory();
@@ -110,6 +117,7 @@ export default function Room() {
               interviewState={interviewPanelState}
               pairState={pair.pairState}
               setPairState={pair.setPairState}
+              contestState={contest}
               isOwner={settings.isOwner}
             />
           }
@@ -141,6 +149,7 @@ export default function Room() {
               setSelectedExecution={execution.setSelectedExecution}
               loadExecutionHistory={execution.reloadHistory}
               interviewState={interview.interviewState}
+              contestState={contest}
             />
           }
           rightSidebar={

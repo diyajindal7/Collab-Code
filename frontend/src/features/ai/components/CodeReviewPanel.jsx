@@ -51,7 +51,9 @@ export default function CodeReviewPanel({ language, selectedCode }) {
   
    useEffect(() => {
     if (selectedCode.trim()) {
-      setError("");
+      queueMicrotask(() => {
+        setError("");
+      });
     }
   }, [selectedCode]);
 

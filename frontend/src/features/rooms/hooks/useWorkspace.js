@@ -6,6 +6,7 @@ import { updateFileContent } from "@/features/files/services/fileService";
 export default function useWorkspace(roomCode, language, setLanguage, pairState) {
   const [saveStatus, setSaveStatus] = useState("Saved");
   const autoSaveTimeoutRef = useRef(null);
+  const saveRequestIdRef = useRef(0);
   const {
     code,
     setCode,
@@ -93,11 +94,20 @@ export default function useWorkspace(roomCode, language, setLanguage, pairState)
   useEffect(() => {
     if (!currentFile?._id) return undefined;
 
-    setSaveStatus("Saving...");
-    setDirtyFiles((currentDirtyFiles) => ({
-      ...currentDirtyFiles,
-      [currentFile._id]: true,
-    }));
+    if ((currentFile.content || "") === code && currentFile.language === language) {
+      return undefined;
+    }
+
+    const requestId = saveRequestIdRef.current + 1;
+    saveRequestIdRef.current = requestId;
+
+    queueMicrotask(() => {
+      setSaveStatus("Saving...");
+      setDirtyFiles((currentDirtyFiles) => ({
+        ...currentDirtyFiles,
+        [currentFile._id]: true,
+      }));
+    });
 
     if (autoSaveTimeoutRef.current) {
       clearTimeout(autoSaveTimeoutRef.current);
@@ -109,6 +119,10 @@ export default function useWorkspace(roomCode, language, setLanguage, pairState)
           content: code,
           language,
         });
+
+        if (saveRequestIdRef.current !== requestId) {
+          return;
+        }
 
         setSaveStatus("Saved");
         setDirtyFiles((currentDirtyFiles) => ({
@@ -122,6 +136,10 @@ export default function useWorkspace(roomCode, language, setLanguage, pairState)
         );
         setCurrentFile(data.file);
       } catch (error) {
+        if (saveRequestIdRef.current !== requestId) {
+          return;
+        }
+
         console.error(error);
         setSaveStatus("Save failed");
       }
@@ -134,6 +152,8 @@ export default function useWorkspace(roomCode, language, setLanguage, pairState)
     };
   }, [
     code,
+    currentFile?.content,
+    currentFile?.language,
     currentFile?._id,
     language,
     setCurrentFile,

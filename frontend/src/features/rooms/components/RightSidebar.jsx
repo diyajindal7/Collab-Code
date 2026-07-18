@@ -3,11 +3,23 @@ import AiAssistantPanel from "@/features/ai/components/AiAssistantPanel";
 export default function RightSidebar({
   isOpen,
   setIsOpen,
+  width,
+  onResizeStart,
   language,
   selectedCode,
 }) {
   return (
-    <aside className="flex min-h-0 w-80 shrink-0 flex-col border-l border-slate-800 bg-slate-950">
+    <aside
+      className="relative flex min-h-0 shrink-0 flex-col border-l border-slate-800 bg-slate-950"
+      style={{ width }}
+    >
+      <div
+        aria-label="Resize AI assistant"
+        role="separator"
+        tabIndex={0}
+        className="absolute left-0 top-0 z-20 h-full w-1 cursor-col-resize bg-transparent transition-colors hover:bg-blue-500/70"
+        onMouseDown={onResizeStart}
+      />
       <div className="flex h-10 items-center justify-between border-b border-slate-800 px-3">
         <span className="text-sm font-semibold text-white">AI Assistant</span>
         <button

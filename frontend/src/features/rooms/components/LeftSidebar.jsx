@@ -17,6 +17,8 @@ const leftPanels = [
 export default function LeftSidebar({
   activePanel,
   setActivePanel,
+  width,
+  onResizeStart,
   roomCode,
   currentFile,
   onOpenFile,
@@ -29,7 +31,10 @@ export default function LeftSidebar({
   isOwner,
 }) {
   return (
-    <aside className="flex min-h-0 shrink-0 border-r border-slate-800 bg-slate-950">
+    <aside
+      className="relative flex min-h-0 shrink-0 border-r border-slate-800 bg-slate-950"
+      style={{ width }}
+    >
       <nav className="flex w-20 flex-col gap-2 border-r border-slate-800 p-2">
         {leftPanels.map((panel) => (
           <button
@@ -49,7 +54,7 @@ export default function LeftSidebar({
         ))}
       </nav>
 
-      <div className="h-full w-72 overflow-hidden">
+      <div className="h-full min-w-0 flex-1 overflow-hidden">
         {activePanel === "participants" ? (
           <Participants />
         ) : activePanel === "chat" ? (
@@ -81,6 +86,14 @@ export default function LeftSidebar({
           />
         )}
       </div>
+
+      <div
+        aria-label="Resize left sidebar"
+        role="separator"
+        tabIndex={0}
+        className="absolute right-0 top-0 z-20 h-full w-1 cursor-col-resize bg-transparent transition-colors hover:bg-blue-500/70"
+        onMouseDown={onResizeStart}
+      />
     </aside>
   );
 }

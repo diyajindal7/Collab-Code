@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import socket from "@/features/editor/socket";
 import { ChatProvider } from "@/features/chat/context/ChatContext";
@@ -19,6 +19,23 @@ import useRoomSettings from "../hooks/useRoomSettings";
 import useWorkspace from "../hooks/useWorkspace";
 import { useEditor } from "@/features/editor/context/EditorContext";
 
+const LEFT_PANEL_STORAGE_KEY = "collabcode:left-sidebar-width";
+const RIGHT_PANEL_STORAGE_KEY = "collabcode:right-sidebar-width";
+const LEFT_PANEL_MIN_WIDTH = 240;
+const LEFT_PANEL_MAX_WIDTH = 500;
+const RIGHT_PANEL_MIN_WIDTH = 280;
+const RIGHT_PANEL_MAX_WIDTH = 600;
+
+const getStoredPanelWidth = (key, fallback, min, max) => {
+  const storedWidth = Number(localStorage.getItem(key));
+
+  if (!Number.isFinite(storedWidth)) {
+    return fallback;
+  }
+
+  return Math.min(max, Math.max(min, storedWidth));
+};
+
 export default function Room() {
   const { roomCode } = useParams();
   const navigate = useNavigate();
@@ -30,7 +47,24 @@ export default function Room() {
   const [activeLeftPanel, setActiveLeftPanel] = useState("files");
   const [activeBottomTab, setActiveBottomTab] = useState("output");
   const [isBottomPanelOpen, setIsBottomPanelOpen] = useState(true);
+  const [leftSidebarWidth, setLeftSidebarWidth] = useState(() =>
+    getStoredPanelWidth(
+      LEFT_PANEL_STORAGE_KEY,
+      368,
+      LEFT_PANEL_MIN_WIDTH,
+      LEFT_PANEL_MAX_WIDTH
+    )
+  );
+  const [rightSidebarWidth, setRightSidebarWidth] = useState(() =>
+    getStoredPanelWidth(
+      RIGHT_PANEL_STORAGE_KEY,
+      320,
+      RIGHT_PANEL_MIN_WIDTH,
+      RIGHT_PANEL_MAX_WIDTH
+    )
+  );
   const openFileRef = useRef(null);
+  const resizeFrameRef = useRef(null);
 
   const recording = useRecording(roomCode);
   const interview = useInterview(roomCode, recording.stopRecording);
@@ -67,6 +101,18 @@ export default function Room() {
     }
   }, [roomCode]);
 
+  useEffect(
+    () => () => {
+      if (resizeFrameRef.current) {
+        window.cancelAnimationFrame(resizeFrameRef.current);
+      }
+
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+    },
+    []
+  );
+
   const handleLeaveRoom = () => {
     recording.stopRecording();
     resetEditor();
@@ -77,6 +123,73 @@ export default function Room() {
 
     navigate("/dashboard");
   };
+
+  const startPanelResize = useCallback(
+    ({ event, side }) => {
+      event.preventDefault();
+
+      const startX = event.clientX;
+      const startingWidth =
+        side === "left" ? leftSidebarWidth : rightSidebarWidth;
+      const minWidth =
+        side === "left" ? LEFT_PANEL_MIN_WIDTH : RIGHT_PANEL_MIN_WIDTH;
+      const maxWidth =
+        side === "left" ? LEFT_PANEL_MAX_WIDTH : RIGHT_PANEL_MAX_WIDTH;
+      const storageKey =
+        side === "left" ? LEFT_PANEL_STORAGE_KEY : RIGHT_PANEL_STORAGE_KEY;
+      const updateWidth =
+        side === "left" ? setLeftSidebarWidth : setRightSidebarWidth;
+
+      document.body.style.cursor = "col-resize";
+      document.body.style.userSelect = "none";
+
+      const handleMouseMove = (moveEvent) => {
+        const delta =
+          side === "left"
+            ? moveEvent.clientX - startX
+            : startX - moveEvent.clientX;
+        const nextWidth = Math.min(
+          maxWidth,
+          Math.max(minWidth, startingWidth + delta)
+        );
+
+        if (resizeFrameRef.current) {
+          window.cancelAnimationFrame(resizeFrameRef.current);
+        }
+
+        resizeFrameRef.current = window.requestAnimationFrame(() => {
+          updateWidth(nextWidth);
+        });
+      };
+
+      const handleMouseUp = (upEvent) => {
+        const delta =
+          side === "left"
+            ? upEvent.clientX - startX
+            : startX - upEvent.clientX;
+        const finalWidth = Math.min(
+          maxWidth,
+          Math.max(minWidth, startingWidth + delta)
+        );
+
+        if (resizeFrameRef.current) {
+          window.cancelAnimationFrame(resizeFrameRef.current);
+          resizeFrameRef.current = null;
+        }
+
+        updateWidth(finalWidth);
+        localStorage.setItem(storageKey, String(finalWidth));
+        document.body.style.cursor = "";
+        document.body.style.userSelect = "";
+        window.removeEventListener("mousemove", handleMouseMove);
+        window.removeEventListener("mouseup", handleMouseUp);
+      };
+
+      window.addEventListener("mousemove", handleMouseMove);
+      window.addEventListener("mouseup", handleMouseUp);
+    },
+    [leftSidebarWidth, rightSidebarWidth]
+  );
 
   const interviewPanelState = {
     status: interview.interviewState?.status || interview.interviewStatus,
@@ -109,6 +222,13 @@ export default function Room() {
             <LeftSidebar
               activePanel={activeLeftPanel}
               setActivePanel={setActiveLeftPanel}
+              width={leftSidebarWidth}
+              onResizeStart={(event) =>
+                startPanelResize({
+                  event,
+                  side: "left",
+                })
+              }
               roomCode={roomCode}
               currentFile={workspace.currentFile}
               onOpenFile={workspace.openFile}
@@ -156,6 +276,13 @@ export default function Room() {
             <RightSidebar
               isOpen={showAiPanel}
               setIsOpen={setShowAiPanel}
+              width={rightSidebarWidth}
+              onResizeStart={(event) =>
+                startPanelResize({
+                  event,
+                  side: "right",
+                })
+              }
               language={language}
               selectedCode={selectedCode}
             />

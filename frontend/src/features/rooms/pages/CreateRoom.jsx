@@ -13,6 +13,8 @@ export default function CreateRoom() {
 
   const [title, setTitle] = useState("");
   const [language, setLanguage] = useState("javascript");
+  const [interviewMode, setInterviewMode] = useState(false);
+  const [duration, setDuration] = useState(45);
   const [loading, setLoading] = useState(false);
 
   const handleCreateRoom = async (e) => {
@@ -24,6 +26,8 @@ export default function CreateRoom() {
       const response = await createRoom({
         title,
         language,
+        interviewMode,
+        duration,
       });
 
       toast.success("Room Created Successfully!");
@@ -88,6 +92,40 @@ export default function CreateRoom() {
                 <option>cpp</option>
                 <option>c</option>
               </select>
+
+            </div>
+
+            <div className="space-y-3">
+
+              <label className="flex items-center gap-3 text-sm font-medium">
+                <input
+                  type="checkbox"
+                  checked={interviewMode}
+                  onChange={(e) => setInterviewMode(e.target.checked)}
+                  className="h-4 w-4 rounded border-slate-700 bg-slate-900"
+                />
+                Interview Mode
+              </label>
+
+              {interviewMode && (
+                <div>
+
+                  <Label>Interview Duration</Label>
+
+                  <select
+                    value={duration}
+                    onChange={(e) => setDuration(Number(e.target.value))}
+                    className="w-full border rounded-md p-2"
+                  >
+                    <option value={15}>15 Minutes</option>
+                    <option value={30}>30 Minutes</option>
+                    <option value={45}>45 Minutes</option>
+                    <option value={60}>60 Minutes</option>
+                    <option value={90}>90 Minutes</option>
+                  </select>
+
+                </div>
+              )}
 
             </div>
 

@@ -34,9 +34,6 @@ export default function RegisterForm() {
 
     navigate("/");
   } catch (error) {
-    console.log(error.response);
-    console.log(error.response?.data);
-
     toast.error(
       error.response?.data?.message || "Registration Failed"
     );

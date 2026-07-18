@@ -8,6 +8,11 @@ import { useEditor } from "../context/EditorContext";
 export default function CodeEditor({
   language,
   onSelectionChange = () => {},
+  readOnly = false,
+  pairEnabled = false,
+  followTarget = "",
+  currentFile = null,
+  openFiles = [],
 }) {
   const { roomCode } = useParams();
 
@@ -16,7 +21,9 @@ export default function CodeEditor({
   const userRef = useRef(null);
   const roomCodeRef = useRef(roomCode);
   const cursorPositionDisposableRef = useRef(null);
+  const scrollDisposableRef = useRef(null);
   const cursorThrottleTimeoutRef = useRef(null);
+  const followThrottleTimeoutRef = useRef(null);
   const lastCursorEmitRef = useRef(0);
   const lastCursorLeaveRef = useRef(null);
   const cursorWidgetsRef = useRef({});
@@ -28,6 +35,29 @@ export default function CodeEditor({
 
   const { setParticipants } = useParticipants();
   const { code, setCode } = useEditor();
+
+  const emitPairFollowUpdate = () => {
+    if (!editorRef.current || !userRef.current || !pairEnabled) return;
+
+    socket.emit("pair:follow:update", {
+      roomCode,
+      payload: {
+        currentFile: currentFile?._id || currentFile?.id || null,
+        openFiles: openFiles.map((file) => file._id || file.id).filter(Boolean),
+        position: editorRef.current.getPosition(),
+        scrollTop: editorRef.current.getScrollTop(),
+      },
+    });
+  };
+
+  const schedulePairFollowUpdate = () => {
+    if (followThrottleTimeoutRef.current) return;
+
+    followThrottleTimeoutRef.current = setTimeout(() => {
+      followThrottleTimeoutRef.current = null;
+      emitPairFollowUpdate();
+    }, 120);
+  };
 
   const getCursorColor = (userId) => {
     if (cursorColorsRef.current[userId]) {
@@ -227,6 +257,20 @@ export default function CodeEditor({
 
     cursorPositionDisposableRef.current =
       editor.onDidChangeCursorPosition(scheduleCursorMove);
+
+    if (scrollDisposableRef.current) {
+      scrollDisposableRef.current.dispose();
+    }
+
+    scrollDisposableRef.current = editor.onDidScrollChange(
+      schedulePairFollowUpdate
+    );
+    editor.updateOptions({
+      readOnly,
+      readOnlyMessage: {
+        value: "Navigator is read-only. Request control to edit.",
+      },
+    });
   };
 
   useEffect(() => {
@@ -241,8 +285,16 @@ export default function CodeEditor({
         clearTimeout(cursorThrottleTimeoutRef.current);
       }
 
+      if (followThrottleTimeoutRef.current) {
+        clearTimeout(followThrottleTimeoutRef.current);
+      }
+
       if (cursorPositionDisposableRef.current) {
         cursorPositionDisposableRef.current.dispose();
+      }
+
+      if (scrollDisposableRef.current) {
+        scrollDisposableRef.current.dispose();
       }
 
       if (editorRef.current) {
@@ -260,6 +312,17 @@ export default function CodeEditor({
       });
     };
   }, []);
+
+  useEffect(() => {
+    if (!editorRef.current) return;
+
+    editorRef.current.updateOptions({
+      readOnly,
+      readOnlyMessage: {
+        value: "Navigator is read-only. Request control to edit.",
+      },
+    });
+  }, [readOnly]);
 
   useEffect(() => {
     if (!editorRef.current) return;
@@ -335,6 +398,10 @@ export default function CodeEditor({
     userRef.current = user;
     lastCursorLeaveRef.current = null;
 
+    if (!socket.connected) {
+      socket.connect();
+    }
+
     socket.emit("join-room", {
       roomCode,
       user,
@@ -405,6 +472,21 @@ export default function CodeEditor({
       });
     };
 
+    const handlePairFollowUpdate = ({ userId, payload }) => {
+      if (!editorRef.current || !payload) return;
+      if (!followTarget || userId?.toString() !== followTarget?.toString()) return;
+
+      if (payload.position) {
+        editorRef.current.revealPositionInCenterIfOutsideViewport(
+          payload.position
+        );
+      }
+
+      if (typeof payload.scrollTop === "number") {
+        editorRef.current.setScrollTop(payload.scrollTop);
+      }
+    };
+
     socket.on("load-code", handleLoadCode);
     socket.on("receive-code", handleReceiveCode);
     socket.on("participants-update", handleParticipants);
@@ -412,6 +494,7 @@ export default function CodeEditor({
     socket.on("cursor:leave", handleCursorLeave);
     socket.on("selection:change", handleSelectionChange);
     socket.on("selection:clear", handleSelectionClear);
+    socket.on("pair:follow:update", handlePairFollowUpdate);
 
     return () => {
       emitCursorLeave();
@@ -423,13 +506,30 @@ export default function CodeEditor({
       socket.off("cursor:leave", handleCursorLeave);
       socket.off("selection:change", handleSelectionChange);
       socket.off("selection:clear", handleSelectionClear);
+      socket.off("pair:follow:update", handlePairFollowUpdate);
     };
-  }, [roomCode, setParticipants]);
+  }, [roomCode, setParticipants, followTarget]);
 
   const handleEditorChange = (value) => {
+    if (isRemoteUpdate.current) {
+      setCode(value);
+      return;
+    }
+
+    if (readOnly) return;
+
     setCode(value);
 
-    if (isRemoteUpdate.current) return;
+    if (pairEnabled) {
+      socket.emit("pair:presence", {
+        roomCode,
+        status: {
+          activity: "typing",
+          currentFile: currentFile?._id || currentFile?.id || null,
+          currentFileName: currentFile?.name || "",
+        },
+      });
+    }
 
     socket.emit("code-change", {
       roomCode,
@@ -448,6 +548,3 @@ export default function CodeEditor({
     />
   );
 }
-
-
-

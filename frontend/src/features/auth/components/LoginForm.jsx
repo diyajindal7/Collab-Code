@@ -41,10 +41,6 @@ const {
       navigate("/dashboard");
 
     } catch (error) {
-  console.log("FULL ERROR:", error);
-  console.log("RESPONSE:", error.response);
-  console.log("DATA:", error.response?.data);
-
   toast.error(error.response?.data?.message);
 
 }finally {

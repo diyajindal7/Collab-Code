@@ -78,7 +78,6 @@ const joinRoom = async (req, res) => {
 
         // Find room
         const room = await Room.findOne({ roomCode });
-
         if (!room) {
             return res.status(404).json({
                 success: false,
@@ -87,28 +86,28 @@ const joinRoom = async (req, res) => {
         }
 
         // Check if already joined
-        const alreadyJoined = room.participants.some(
+const alreadyJoined = room.participants.some(
     participant => participant.toString() === userId
 );
-
-if (alreadyJoined) {
-    return res.status(400).json({
-        success: false,
-        message: "Already joined this room"
-    });
+if (!alreadyJoined) {
+    room.participants.push(userId);
+    await room.save();
 }
 
-        // Add user to room
-        room.participants.push(userId);
-
-        await room.save();
-
         // Update user
-        await User.findByIdAndUpdate(userId, {
+        const user = await User.findById(userId);
+
+        const alreadyInJoinedRooms = user.joinedRooms.some(
+            joinedRoom => joinedRoom.toString() === room._id.toString()
+        );
+
+        if (!alreadyInJoinedRooms) {
+            await User.findByIdAndUpdate(userId, {
             $push: {
                 joinedRooms: room._id
             }
         });
+        }
 
         res.status(200).json({
             success: true,
@@ -134,14 +133,110 @@ const getMyRooms = async (req, res) => {
 
         const userId = req.user.userId;
 
-        const user = await User.findById(userId)
-            .populate("createdRooms")
-            .populate("joinedRooms");
+        const rooms = await Room.find({
+            $or: [
+                { owner: userId },
+                { participants: userId }
+            ]
+        })
+            .populate("owner", "name email")
+            .populate("participants", "name email")
+            .sort({ createdAt: -1 });
 
         res.status(200).json({
             success: true,
-            createdRooms: user.createdRooms,
-            joinedRooms: user.joinedRooms
+            rooms
+        });
+
+    } catch (error) {
+
+        console.error(error);
+
+        res.status(500).json({
+            success: false,
+            message: "Server Error"
+        });
+
+    }
+};
+
+const updateRoomSettings = async (req, res) => {
+    try {
+
+        const { roomCode } = req.params;
+        const {
+            title,
+            language,
+            interviewMode,
+            duration
+        } = req.body;
+
+        const room = await Room.findOne({ roomCode });
+
+        if (!room) {
+            return res.status(404).json({
+                success: false,
+                message: "Room not found"
+            });
+        }
+
+        if (room.owner.toString() !== req.user.userId) {
+            return res.status(403).json({
+                success: false,
+                message: "Only room owner can update settings"
+            });
+        }
+
+        if (title !== undefined) room.title = title;
+        if (language !== undefined) room.language = language;
+        if (interviewMode !== undefined) room.interviewMode = interviewMode;
+        if (duration !== undefined) room.duration = duration;
+
+        await room.save();
+
+        res.status(200).json({
+            success: true,
+            room
+        });
+
+    } catch (error) {
+
+        console.error(error);
+
+        res.status(500).json({
+            success: false,
+            message: "Server Error"
+        });
+
+    }
+};
+
+const deleteRoom = async (req, res) => {
+    try {
+
+        const { roomCode } = req.params;
+
+        const room = await Room.findOne({ roomCode });
+
+        if (!room) {
+            return res.status(404).json({
+                success: false,
+                message: "Room not found"
+            });
+        }
+
+        if (room.owner.toString() !== req.user.userId) {
+            return res.status(403).json({
+                success: false,
+                message: "Only room owner can delete this room"
+            });
+        }
+
+        await Room.findByIdAndDelete(room._id);
+
+        res.status(200).json({
+            success: true,
+            message: "Room deleted successfully"
         });
 
     } catch (error) {
@@ -160,5 +255,7 @@ const getMyRooms = async (req, res) => {
 module.exports = {
     createRoom,
     joinRoom,
-    getMyRooms
+    getMyRooms,
+    updateRoomSettings,
+    deleteRoom
 };

@@ -11,6 +11,9 @@ const connectDB = require("./config/db");
 const authRoutes = require("./routes/authRoutes");
 const roomRoutes = require("./routes/roomRoutes");
 const judge0Routes = require("./routes/judge0Routes");
+const fileRoutes = require("./routes/fileRoutes");
+const recordingRoutes = require("./routes/recordingRoutes");
+const executionRoutes = require("./routes/executionRoutes");
 const aiReviewRoutes = require("./routes/aiReviewRoutes");
 const aiExplainRoutes = require("./routes/aiExplainRoutes");
 const aiFixRoutes = require("./routes/aiFixRoutes");
@@ -32,6 +35,7 @@ app.use(
 );
 
 app.use(express.json());
+app.use("/uploads", express.static("uploads"));
 
 app.get("/", (req, res) => {
   res.send("Collaborative Coding Platform API");
@@ -40,6 +44,9 @@ app.get("/", (req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/rooms", roomRoutes);
 app.use("/api/judge0", judge0Routes);
+app.use("/api/files", fileRoutes);
+app.use("/api/recordings", recordingRoutes);
+app.use("/api/executions", executionRoutes);
 app.use("/api/ai", aiReviewRoutes);
 app.use("/api/ai", aiExplainRoutes);
 app.use("/api/ai", aiFixRoutes);

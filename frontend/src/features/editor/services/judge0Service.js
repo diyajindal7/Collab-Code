@@ -1,10 +1,6 @@
-import axios from "axios";
-
-const API = axios.create({
-  baseURL: `${import.meta.env.VITE_API_URL}/judge0`,
-});
+import api from "@/lib/axios";
 
 export const runCode = async (payload) => {
-  const { data } = await API.post("/run", payload);
+  const { data } = await api.post("/judge0/run", payload);
   return data;
 };

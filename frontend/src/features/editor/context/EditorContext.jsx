@@ -21,6 +21,19 @@ function hello() {
   const [stdin, setStdin] = useState("");
   const [execution, setExecution] = useState(initialExecution);
   const [isRunning, setIsRunning] = useState(false);
+  const [currentFile, setCurrentFile] = useState(null);
+  const [openFiles, setOpenFiles] = useState([]);
+  const [dirtyFiles, setDirtyFiles] = useState({});
+
+  const resetEditor = () => {
+    setCode("");
+    setStdin("");
+    setExecution(initialExecution);
+    setIsRunning(false);
+    setCurrentFile(null);
+    setOpenFiles([]);
+    setDirtyFiles({});
+  };
 
   return (
     <EditorContext.Provider
@@ -33,6 +46,13 @@ function hello() {
         setExecution,
         isRunning,
         setIsRunning,
+        currentFile,
+        setCurrentFile,
+        openFiles,
+        setOpenFiles,
+        dirtyFiles,
+        setDirtyFiles,
+        resetEditor,
       }}
     >
       {children}

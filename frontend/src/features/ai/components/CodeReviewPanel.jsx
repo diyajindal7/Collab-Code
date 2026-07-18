@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useEditor } from "@/features/editor/context/EditorContext";
 import { reviewCode } from "../services/aiReviewService";
+import { useParams } from "react-router-dom";
+import socket from "@/features/editor/socket";
 
 
 
@@ -41,6 +43,7 @@ function ReviewItem({ item, recommendationLabel }) {
 }
 
 export default function CodeReviewPanel({ language, selectedCode }) {
+  const { roomCode } = useParams();
   const { code } = useEditor();
   const [review, setReview] = useState(null);
   const [isReviewing, setIsReviewing] = useState(false);
@@ -54,6 +57,12 @@ export default function CodeReviewPanel({ language, selectedCode }) {
 
   const requestReview = async (sourceCode) => {
     try {
+      const user = JSON.parse(localStorage.getItem("user"));
+      socket.emit("pair:ai-action", {
+        roomCode,
+        action: "AI Review",
+        user,
+      });
       setIsReviewing(true);
       setError("");
 

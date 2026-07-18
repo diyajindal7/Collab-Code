@@ -1,8 +1,11 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { explainCode } from "../services/aiExplainService";
+import { useParams } from "react-router-dom";
+import socket from "@/features/editor/socket";
 
 export default function CodeExplainPanel({ language, selectedCode }) {
+  const { roomCode } = useParams();
   const [explanation, setExplanation] = useState(null);
   const [isExplaining, setIsExplaining] = useState(false);
   const [error, setError] = useState("");
@@ -19,6 +22,12 @@ export default function CodeExplainPanel({ language, selectedCode }) {
     }
 
     try {
+      const user = JSON.parse(localStorage.getItem("user"));
+      socket.emit("pair:ai-action", {
+        roomCode,
+        action: "AI Explain",
+        user,
+      });
       setIsExplaining(true);
       setError("");
 

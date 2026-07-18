@@ -7,6 +7,8 @@ import ProtectedRoute from "../components/common/ProtectedRoute";
 import CreateRoom from "../features/rooms/pages/CreateRoom";
 import JoinRoom from "../features/rooms/pages/JoinRoom";
 import Room from "../features/rooms/pages/Room";
+import ForgotPassword from "../features/auth/pages/ForgotPassword";
+import ResetPassword from "../features/auth/pages/ResetPassword";
 
 import { EditorProvider } from "@/features/editor/context/EditorContext";
 export default function AppRoutes() {
@@ -54,6 +56,17 @@ export default function AppRoutes() {
     </ProtectedRoute>
   }
 />
+
+<Route
+  path="/forgot-password"
+  element={<ForgotPassword />}
+/>
+
+<Route
+  path="/reset-password/:token"
+  element={<ResetPassword />}
+/>
+
       </Routes>
     </BrowserRouter>
   );

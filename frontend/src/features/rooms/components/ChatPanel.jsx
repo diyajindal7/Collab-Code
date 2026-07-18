@@ -16,6 +16,28 @@ export default function ChatPanel() {
   const user = JSON.parse(localStorage.getItem("user"));
   const username = user?.name;
 
+  const renderMessageBody = (message) => {
+    const snippetMatch = message.match(/```([\s\S]*?)```/);
+
+    if (!snippetMatch) {
+      return <p className="whitespace-pre-wrap">{message}</p>;
+    }
+
+    const before = message.slice(0, snippetMatch.index).trim();
+    const code = snippetMatch[1].trim();
+    const after = message.slice(snippetMatch.index + snippetMatch[0].length).trim();
+
+    return (
+      <div className="space-y-2">
+        {before && <p className="whitespace-pre-wrap">{before}</p>}
+        <pre className="max-h-48 overflow-auto rounded bg-slate-950 p-3 text-xs text-slate-200">
+          <code>{code}</code>
+        </pre>
+        {after && <p className="whitespace-pre-wrap">{after}</p>}
+      </div>
+    );
+  };
+
   const emitTypingStop = () => {
     if (!isTypingRef.current) return;
 
@@ -138,10 +160,17 @@ const handleTypingStop = ({ username: receivedUsername }) => {
                   className={`rounded-full px-3 py-1 text-center text-xs ${
                     msg.type === "join"
                       ? "bg-green-500/15 border border-green-500/30 text-green-300"
-                      : "bg-red-500/15 border border-red-500/30 text-red-300"
+                      : msg.type === "leave"
+                        ? "bg-red-500/15 border border-red-500/30 text-red-300"
+                        : "bg-blue-500/15 border border-blue-500/30 text-blue-300"
                   }`}
                 >
-                  {msg.type === "join" ? "\uD83D\uDFE2" : "\uD83D\uDD34"} {msg.message}
+                  {msg.type === "join"
+                    ? "\uD83D\uDFE2"
+                    : msg.type === "leave"
+                      ? "\uD83D\uDD34"
+                      : "\u24D8"}{" "}
+                  {msg.message}
                 </div>
               </div>
             ) : (
@@ -156,7 +185,7 @@ const handleTypingStop = ({ username: receivedUsername }) => {
     </span>
   </div>
 
-  <p>{msg.message}</p>
+  {renderMessageBody(msg.message)}
 </div>
             )}
 

@@ -8,6 +8,8 @@ export default function Toolbar({
   onRun,
   roomCode,
   isRunning,
+  onLeaveRoom,
+  onOpenSettings,
 }) {
   const [connectionStatus, setConnectionStatus] = useState(
   socket.connected ? "Connected" : "Disconnected"
@@ -90,6 +92,15 @@ export default function Toolbar({
         <Button variant="secondary" onClick={copyRoomCode}>
           Copy Room Code
         </Button>
+        <Button variant="secondary" onClick={onOpenSettings}>
+          Settings
+        </Button>
+        <Button
+    variant="destructive"
+    onClick={onLeaveRoom}
+>
+    Leave Room
+</Button>
       </div>
     </div>
   );

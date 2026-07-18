@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { fixCode } from "../services/aiFixService";
+import { useParams } from "react-router-dom";
+import socket from "@/features/editor/socket";
 
 const severityClasses = {
   low: "border-blue-500/30 bg-blue-500/15 text-blue-400",
@@ -10,6 +12,7 @@ const severityClasses = {
 };
 
 export default function CodeFixPanel({ language, selectedCode }) {
+  const { roomCode } = useParams();
   const [fixedResult, setFixedResult] = useState(null);
   const [isFixing, setIsFixing] = useState(false);
   const [error, setError] = useState("");
@@ -26,6 +29,12 @@ export default function CodeFixPanel({ language, selectedCode }) {
     }
 
     try {
+      const user = JSON.parse(localStorage.getItem("user"));
+      socket.emit("pair:ai-action", {
+        roomCode,
+        action: "AI Fix",
+        user,
+      });
       setIsFixing(true);
       setError("");
 

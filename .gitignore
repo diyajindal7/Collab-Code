@@ -25,3 +25,5 @@ frontend/.env.production
 # Dependencies
 node_modules/
 
+.vercel
+.env*

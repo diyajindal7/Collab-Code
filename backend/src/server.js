@@ -24,13 +24,25 @@ connectDB();
 
 const app = express();
 
+const getAllowedOrigins = () => {
+  const base = [
+    "http://localhost:5173",
+    "https://collab-code-pi.vercel.app",
+    /\.vercel\.app$/,
+  ];
+  const env = process.env.ALLOWED_ORIGINS;
+  if (env) {
+    env.split(",").forEach((o) => {
+      const trimmed = o.trim();
+      if (trimmed) base.push(trimmed);
+    });
+  }
+  return base;
+};
+
 app.use(
   cors({
-    origin: [
-      "http://localhost:5173",
-      "https://collab-code-pi.vercel.app",
-      /\.vercel\.app$/,
-    ],
+    origin: getAllowedOrigins(),
     credentials: true,
   })
 );
@@ -57,11 +69,7 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: [
-      "http://localhost:5173",
-      "https://collab-code-pi.vercel.app",
-      /\.vercel\.app$/,
-    ],
+    origin: getAllowedOrigins(),
     methods: ["GET", "POST"],
     credentials: true,
   },

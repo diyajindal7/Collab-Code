@@ -9,3 +9,19 @@ frontend/node_modules/
 
 .vscode/
 .DS_Store
+
+
+# User uploads
+backend/uploads/
+
+# Environment files
+backend/.env
+backend/.env.local
+backend/.env.production
+frontend/.env
+frontend/.env.local
+frontend/.env.production
+
+# Dependencies
+node_modules/
+
